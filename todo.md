@@ -31,4 +31,7 @@
 - [x] Tester la navigation et le responsive
 - [x] Tester l'interface admin
 - [x] Créer un checkpoint
-- [ ] Préparer les instructions pour l'utilisateur
+- [x] Préparer les instructions pour l'utilisateur
+
+## Modifications demandées
+- [x] Changer le nom du site de "Portfolio Vidéo Générative" à "Jenia"

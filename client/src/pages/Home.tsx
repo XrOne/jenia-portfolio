@@ -64,7 +64,7 @@ export default function Home() {
         {/* Content */}
         <div className="relative z-10 h-full flex flex-col items-center justify-center px-4">
           <h1 className="text-5xl md:text-7xl font-bold text-center mb-6 animate-fade-in">
-            Vidéo Générative IA
+            Jenia
           </h1>
           <p className="text-xl md:text-2xl text-center mb-12 max-w-3xl text-gray-200 animate-fade-in animation-delay-200">
             De l'idée à l'animation : workflows complets de conception vidéo par intelligence artificielle
@@ -257,7 +257,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-8 px-4 bg-black border-t border-gray-800">
         <div className="container mx-auto text-center text-gray-500">
-          <p>&copy; 2025 Portfolio Vidéo Générative. Tous droits réservés.</p>
+          <p>&copy; 2025 Jenia. Tous droits réservés.</p>
         </div>
       </footer>
     </div>

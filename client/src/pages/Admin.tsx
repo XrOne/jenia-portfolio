@@ -138,7 +138,7 @@ export default function Admin() {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">Administration</h1>
+            <h1 className="text-2xl font-bold">Jenia - Administration</h1>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/">
