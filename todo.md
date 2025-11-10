@@ -35,3 +35,5 @@
 
 ## Modifications demandées
 - [x] Changer le nom du site de "Portfolio Vidéo Générative" à "Jenia"
+- [x] Créer une page Services dédiée avec détails des formules
+- [x] Ajouter la navigation vers la page Services

@@ -88,14 +88,15 @@ export default function Home() {
             >
               Notre processus
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="bg-accent hover:bg-accent/90 text-accent-foreground border-2 border-accent shadow-[0_0_20px_rgba(251,146,60,0.5)]"
-              onClick={() => scrollToSection('services')}
-            >
-              Nos services
-            </Button>
+            <Link href="/services">
+              <Button
+                size="lg"
+                variant="outline"
+                className="bg-accent hover:bg-accent/90 text-accent-foreground border-2 border-accent shadow-[0_0_20px_rgba(251,146,60,0.5)]"
+              >
+                Nos services
+              </Button>
+            </Link>
           </div>
 
           {isAuthenticated && user?.role === 'admin' && (
@@ -245,9 +246,11 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
-                <Button className={`w-full bg-${service.color} hover:bg-${service.color}/90 text-${service.color}-foreground`}>
-                  En savoir plus
-                </Button>
+                <Link href="/services">
+                  <Button className={`w-full bg-${service.color} hover:bg-${service.color}/90 text-${service.color}-foreground`}>
+                    En savoir plus
+                  </Button>
+                </Link>
               </div>
             ))}
           </div>
