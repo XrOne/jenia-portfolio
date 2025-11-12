@@ -1,47 +1,100 @@
-# Project TODO
+# 🎯 TODO - Prochaines Actions
 
-## Phase 1: Base de données et authentification
-- [x] Créer le schéma de base de données pour les vidéos
-- [x] Créer le schéma pour les projets/démos
-- [x] Créer le schéma pour les services
-- [x] Configurer les procédures tRPC pour les vidéos
-- [x] Configurer les procédures tRPC pour les projets
-- [x] Configurer les procédures tRPC pour les services
+## ⚡ Actions Immédiates (15 minutes)
 
-## Phase 2: Interface publique
-- [x] Créer la page d'accueil avec vidéo en arrière-plan
-- [x] Implémenter le design style kryogen.ai (fond noir, vidéo fullscreen)
-- [x] Créer la section Démos avec galerie de vidéos
-- [x] Créer la section Processus (storyboard → Lora → workflow → validation → animation)
-- [x] Créer la section Services avec les différentes formules
-- [x] Ajouter la navigation entre les sections
-- [x] Rendre le site responsive
+### 1. Installer les dépendances
+```bash
+pnpm install
+```
 
-## Phase 3: Interface admin
-- [x] Créer la page admin avec interface personnalisée
-- [x] Implémenter l'upload de vidéos vers S3
-- [x] Créer le formulaire d'ajout/édition de vidéos
-- [x] Créer la liste des vidéos avec actions (éditer/supprimer)
-- [ ] Créer le formulaire d'ajout/édition de projets (futur)
-- [ ] Créer la liste des projets avec actions (futur)
-- [ ] Implémenter la gestion des services (futur)
+### 2. Configurer Supabase
+👉 **Suivez le guide** : [MIGRATION_SUPABASE.md](./MIGRATION_SUPABASE.md)
 
-## Phase 4: Tests et déploiement
-- [x] Tester l'upload et l'affichage des vidéos
-- [x] Tester la navigation et le responsive
-- [x] Tester l'interface admin
-- [x] Créer un checkpoint
-- [x] Préparer les instructions pour l'utilisateur
+Étapes rapides :
+1. Créer compte sur supabase.com
+2. Créer projet + bucket public "jenia-videos"
+3. Récupérer les clés API
+4. Remplir le fichier `.env`
 
-## Modifications demandées
-- [x] Changer le nom du site de "Portfolio Vidéo Générative" à "Jenia"
-- [x] Créer une page Services dédiée avec détails des formules
-- [x] Ajouter la navigation vers la page Services
-- [x] Simplifier le site pour avoir une seule page comme kryogen.ai
-- [x] Mettre les vidéos uploadées en arrière-plan plein écran
-- [x] Supprimer les sections complexes et garder un design minimaliste
-- [x] Supprimer la page Services séparée
-- [x] Créer un nouveau repository GitHub pour le projet Jenia
-- [x] Optimiser le chargement des vidéos (preload, buffering)
-- [x] Ajouter le lien LinkedIn vers https://www.linkedin.com/in/charleshenrimarrauddesgrottes/
-- [x] Ajouter le lien contact email vers studio.jenia@gmail.com
+### 3. Tester la config
+```bash
+pnpm test:supabase
+```
+Si tous les tests passent ✅, vous êtes prêt !
+
+### 4. Lancer le serveur
+```bash
+pnpm dev
+```
+Visitez : http://localhost:5000
+
+### 5. Premier upload
+1. Allez sur `/admin`
+2. Uploadez une vidéo test
+3. Vérifiez qu'elle apparaît sur la page d'accueil
+
+---
+
+## 📚 Guides disponibles
+
+| Guide | Quand l'utiliser |
+|-------|------------------|
+| [MIGRATION_SUPABASE.md](./MIGRATION_SUPABASE.md) | **COMMENCEZ ICI** - Migration vers Supabase |
+| [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) | Guide détaillé Supabase |
+| [README.md](./README.md) | Documentation complète du projet |
+| [QUICKSTART.md](./QUICKSTART.md) | Démarrage ultra-rapide (5 min) |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Déployer sur Vercel |
+
+---
+
+## ✅ Checklist Déploiement
+
+### Phase 1 : Configuration locale
+- [ ] `pnpm install` exécuté
+- [ ] Supabase configuré (compte + projet + bucket)
+- [ ] Fichier `.env` rempli avec vos credentials
+- [ ] `pnpm test:supabase` passe tous les tests ✅
+- [ ] `pnpm dev` lance le serveur sans erreur
+- [ ] Upload de vidéo fonctionne en local
+- [ ] Vidéo s'affiche en arrière-plan
+
+### Phase 2 : Optimisation
+- [ ] Vidéos compressées (FFmpeg)
+- [ ] Formats optimisés (MP4 H.264, 1920x1080)
+- [ ] Plusieurs vidéos uploadées
+- [ ] Page Services vérifiée
+- [ ] Liens sociaux à jour (LinkedIn + Email)
+- [ ] Responsive testé (mobile/tablette/desktop)
+
+### Phase 3 : Déploiement
+- [ ] Code pushé sur GitHub
+- [ ] Compte Vercel créé
+- [ ] Projet importé sur Vercel
+- [ ] Variables d'environnement configurées sur Vercel
+- [ ] Déploiement réussi ✅
+- [ ] Site en ligne testé
+- [ ] Domaine personnalisé configuré (optionnel)
+
+---
+
+## 🆘 Besoin d'aide ?
+
+### Problème avec Supabase ?
+→ Consultez [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) section "Dépannage"
+
+### Problème avec le déploiement ?
+→ Consultez [DEPLOYMENT.md](./DEPLOYMENT.md) section "Résolution de problèmes"
+
+### Autre problème ?
+→ Consultez [README.md](./README.md) section "Dépannage"
+
+---
+
+## 📧 Contact
+
+Email : studio.jenia@gmail.com
+LinkedIn : [Charles Henri Marraud des Grottes](https://www.linkedin.com/in/charleshenrimarrauddesgrottes/)
+
+---
+
+**🎬 Bon courage pour Declics Saison 2 !**
