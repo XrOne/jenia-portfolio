@@ -1,0 +1,8 @@
+{
+  "setup-workTree": [
+    "npm install",
+    "npm run test:supabase",
+    "npm run dev"
+  ]
+}
+
