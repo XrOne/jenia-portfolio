@@ -37,3 +37,11 @@
 - [x] Changer le nom du site de "Portfolio Vidéo Générative" à "Jenia"
 - [x] Créer une page Services dédiée avec détails des formules
 - [x] Ajouter la navigation vers la page Services
+- [x] Simplifier le site pour avoir une seule page comme kryogen.ai
+- [x] Mettre les vidéos uploadées en arrière-plan plein écran
+- [x] Supprimer les sections complexes et garder un design minimaliste
+- [x] Supprimer la page Services séparée
+- [x] Créer un nouveau repository GitHub pour le projet Jenia
+- [x] Optimiser le chargement des vidéos (preload, buffering)
+- [x] Ajouter le lien LinkedIn vers https://www.linkedin.com/in/charleshenrimarrauddesgrottes/
+- [x] Ajouter le lien contact email vers studio.jenia@gmail.com
