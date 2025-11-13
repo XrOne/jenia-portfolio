@@ -45,3 +45,7 @@
 - [x] Optimiser le chargement des vidéos (preload, buffering)
 - [x] Ajouter le lien LinkedIn vers https://www.linkedin.com/in/charleshenrimarrauddesgrottes/
 - [x] Ajouter le lien contact email vers studio.jenia@gmail.com
+- [x] Implémenter le preloading de la vidéo suivante
+- [x] Ajouter un loader élégant pendant le chargement initial
+- [x] Optimiser la transition entre vidéos avec crossfade
+- [ ] Ajouter des métadonnées de cache pour S3

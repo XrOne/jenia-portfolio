@@ -1,6 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import { Linkedin, Mail } from "lucide-react";
+import { Linkedin, Mail, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 
@@ -8,14 +8,29 @@ export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const { data: videos } = trpc.videos.list.useQuery();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const nextVideoRef = useRef<HTMLVideoElement>(null);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Preload next video
+  useEffect(() => {
+    if (videos && videos.length > 1 && nextVideoRef.current) {
+      const nextIndex = (currentVideoIndex + 1) % videos.length;
+      nextVideoRef.current.src = videos[nextIndex].videoUrl;
+      nextVideoRef.current.load();
+    }
+  }, [currentVideoIndex, videos]);
 
   // Auto-play and loop through videos
   useEffect(() => {
     if (videos && videos.length > 0 && videoRef.current) {
       const handleVideoEnd = () => {
-        setCurrentVideoIndex((prev) => (prev + 1) % videos.length);
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setCurrentVideoIndex((prev) => (prev + 1) % videos.length);
+          setIsTransitioning(false);
+        }, 300);
       };
       
       const video = videoRef.current;
@@ -27,7 +42,7 @@ export default function Home() {
     }
   }, [videos]);
 
-  // Update video source when index changes with preload
+  // Update video source when index changes
   useEffect(() => {
     if (videoRef.current && videos && videos[currentVideoIndex]) {
       setIsVideoLoaded(false);
@@ -41,29 +56,64 @@ export default function Home() {
         video.play().catch(console.error);
       };
       
+      const handleLoadedData = () => {
+        setIsVideoLoaded(true);
+      };
+      
       video.addEventListener('canplay', handleCanPlay);
+      video.addEventListener('loadeddata', handleLoadedData);
       
       return () => {
         video.removeEventListener('canplay', handleCanPlay);
+        video.removeEventListener('loadeddata', handleLoadedData);
       };
     }
   }, [currentVideoIndex, videos]);
+
+  const handleVideoChange = (index: number) => {
+    if (index !== currentVideoIndex) {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentVideoIndex(index);
+        setIsTransitioning(false);
+      }, 300);
+    }
+  };
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-black">
       {/* Video Background - Fullscreen with optimization */}
       {videos && videos.length > 0 ? (
-        <video
-          ref={videoRef}
-          className="absolute inset-0 w-full h-full object-cover"
-          autoPlay
-          muted
-          playsInline
-          preload="auto"
-          style={{ opacity: isVideoLoaded ? 1 : 0, transition: 'opacity 0.5s ease-in-out' }}
-        />
+        <>
+          <video
+            ref={videoRef}
+            className="absolute inset-0 w-full h-full object-cover"
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
+            style={{ 
+              opacity: isVideoLoaded && !isTransitioning ? 1 : 0, 
+              transition: 'opacity 0.5s ease-in-out' 
+            }}
+          />
+          {/* Hidden video element for preloading next video */}
+          <video
+            ref={nextVideoRef}
+            className="hidden"
+            preload="auto"
+            muted
+          />
+        </>
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900" />
+      )}
+      
+      {/* Loading indicator */}
+      {!isVideoLoaded && videos && videos.length > 0 && (
+        <div className="absolute inset-0 bg-black flex items-center justify-center z-10">
+          <Loader2 className="w-12 h-12 text-white animate-spin" />
+        </div>
       )}
       
       {/* Subtle overlay for text readability */}
@@ -111,7 +161,7 @@ export default function Home() {
           {videos.map((_, index) => (
             <button
               key={index}
-              onClick={() => setCurrentVideoIndex(index)}
+              onClick={() => handleVideoChange(index)}
               className={`w-2 h-2 rounded-full transition-all ${
                 index === currentVideoIndex
                   ? 'bg-white w-8'
