@@ -9,7 +9,8 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      const client = postgres(process.env.DATABASE_URL);
+      const connectionString = process.env.DATABASE_URL;
+      const client = postgres(connectionString);
       _db = drizzle(client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
@@ -31,49 +32,20 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 
   try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
-
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values)
+    // Pour PostgreSQL, onUpdate se fait différemment
+    await db.insert(users).values(user)
       .onConflictDoUpdate({
         target: users.openId,
-        set: updateSet,
+        set: {
+          name: user.name,
+          email: user.email,
+          loginMethod: user.loginMethod,
+          lastSignedIn: user.lastSignedIn,
+          role: user.role,
+          updatedAt: new Date() // Mettre à jour manuellement updatedAt
+        }
       });
+      
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -122,7 +94,7 @@ export async function createVideo(video: InsertVideo) {
 export async function updateVideo(id: number, video: Partial<InsertVideo>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.update(videos).set(video).where(eq(videos.id, id));
+  await db.update(videos).set({...video, updatedAt: new Date()}).where(eq(videos.id, id));
 }
 
 export async function deleteVideo(id: number) {
@@ -161,7 +133,7 @@ export async function createProject(project: InsertProject) {
 export async function updateProject(id: number, project: Partial<InsertProject>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.update(projects).set(project).where(eq(projects.id, id));
+  await db.update(projects).set({...project, updatedAt: new Date()}).where(eq(projects.id, id));
 }
 
 export async function deleteProject(id: number) {
@@ -200,7 +172,7 @@ export async function createService(service: InsertService) {
 export async function updateService(id: number, service: Partial<InsertService>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.update(services).set(service).where(eq(services.id, id));
+  await db.update(services).set({...service, updatedAt: new Date()}).where(eq(services.id, id));
 }
 
 export async function deleteService(id: number) {

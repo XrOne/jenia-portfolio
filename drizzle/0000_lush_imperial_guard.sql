@@ -1,0 +1,54 @@
+CREATE TYPE "public"."role" AS ENUM('user', 'admin');--> statement-breakpoint
+CREATE TABLE "projects" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"title" varchar(255) NOT NULL,
+	"description" text,
+	"clientName" varchar(255),
+	"storyboardImageUrl" text,
+	"loraTrainingDetails" text,
+	"workflowDescription" text,
+	"finalVideoUrl" text,
+	"isPublished" boolean DEFAULT false NOT NULL,
+	"displayOrder" integer DEFAULT 0 NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "services" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"description" text NOT NULL,
+	"features" text NOT NULL,
+	"priceDescription" varchar(255),
+	"isActive" boolean DEFAULT true NOT NULL,
+	"displayOrder" integer DEFAULT 0 NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "users" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"openId" varchar(64) NOT NULL,
+	"name" text,
+	"email" varchar(320),
+	"loginMethod" varchar(64),
+	"role" "role" DEFAULT 'user' NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	"lastSignedIn" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "users_openId_unique" UNIQUE("openId")
+);
+--> statement-breakpoint
+CREATE TABLE "videos" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"title" varchar(255) NOT NULL,
+	"description" text,
+	"videoUrl" text NOT NULL,
+	"thumbnailUrl" text,
+	"fileKey" varchar(512) NOT NULL,
+	"duration" integer,
+	"isActive" boolean DEFAULT true NOT NULL,
+	"displayOrder" integer DEFAULT 0 NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL
+);
