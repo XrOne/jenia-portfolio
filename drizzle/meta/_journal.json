@@ -1,19 +1,12 @@
 {
   "version": "7",
-  "dialect": "mysql",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
-      "when": 1762780350588,
-      "tag": "0000_early_bloodstrike",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1762780407702,
-      "tag": "0001_condemned_firedrake",
+      "version": "7",
+      "when": 1763141259914,
+      "tag": "0000_clammy_obadiah_stane",
       "breakpoints": true
     }
   ]

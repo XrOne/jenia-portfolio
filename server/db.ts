@@ -1,20 +1,43 @@
-import { eq, desc } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, videos, projects, services, InsertVideo, InsertProject, InsertService } from "../drizzle/schema";
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { ENV } from './_core/env';
 
-let _db: ReturnType<typeof drizzle> | null = null;
+let _supabase: SupabaseClient | null = null;
 
-export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
+export function getSupabase(): SupabaseClient {
+  if (!_supabase) {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be defined');
     }
+    
+    _supabase = createClient(supabaseUrl, supabaseKey);
   }
-  return _db;
+  
+  return _supabase;
+}
+
+// User operations
+export interface User {
+  id: number;
+  openId: string;
+  name: string | null;
+  email: string | null;
+  loginMethod: string | null;
+  role: 'user' | 'admin';
+  createdAt: Date;
+  updatedAt: Date;
+  lastSignedIn: Date;
+}
+
+export interface InsertUser {
+  openId: string;
+  name?: string | null;
+  email?: string | null;
+  loginMethod?: string | null;
+  role?: 'user' | 'admin';
+  lastSignedIn?: Date;
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
@@ -22,185 +45,162 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     throw new Error("User openId is required for upsert");
   }
 
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
-
+  const supabase = getSupabase();
+  
   try {
-    const values: InsertUser = {
+    const userData: any = {
       openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
-
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
+      name: user.name ?? null,
+      email: user.email ?? null,
+      loginMethod: user.loginMethod ?? null,
+      lastSignedIn: user.lastSignedIn ? user.lastSignedIn.toISOString() : new Date().toISOString(),
     };
 
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
+    // Check if user is owner
+    if (user.openId === ENV.ownerOpenId || user.role === 'admin') {
+      userData.role = 'admin';
+    } else if (user.role) {
+      userData.role = user.role;
     }
 
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
+    const { error } = await supabase
+      .from('users')
+      .upsert(userData, {
+        onConflict: 'openId',
+        ignoreDuplicates: false,
+      });
 
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
+    if (error) {
+      console.error("[Database] Failed to upsert user:", error);
+      throw error;
     }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
   }
 }
 
-export async function getUserByOpenId(openId: string) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
+export async function getUserByOpenId(openId: string): Promise<User | undefined> {
+  const supabase = getSupabase();
+  
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('openId', openId)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No rows returned
+      return undefined;
+    }
+    console.error("[Database] Failed to get user:", error);
     return undefined;
   }
 
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
-  return result.length > 0 ? result[0] : undefined;
+  return {
+    ...data,
+    createdAt: new Date(data.createdAt),
+    updatedAt: new Date(data.updatedAt),
+    lastSignedIn: new Date(data.lastSignedIn),
+  } as User;
 }
 
-// Video queries
-export async function getAllVideos() {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(videos).orderBy(desc(videos.displayOrder), desc(videos.createdAt));
+// Video operations
+export interface Video {
+  id: number;
+  title: string;
+  description: string | null;
+  videoUrl: string;
+  thumbnailUrl: string | null;
+  fileKey: string;
+  duration: number | null;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export async function getActiveVideos() {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(videos).where(eq(videos.isActive, true)).orderBy(desc(videos.displayOrder), desc(videos.createdAt));
+export async function getActiveVideos(): Promise<Video[]> {
+  const supabase = getSupabase();
+  
+  const { data, error } = await supabase
+    .from('videos')
+    .select('*')
+    .eq('isActive', true)
+    .order('displayOrder', { ascending: false })
+    .order('createdAt', { ascending: false });
+
+  if (error) {
+    console.error("[Database] Failed to get videos:", error);
+    return [];
+  }
+
+  return data as Video[];
 }
 
-export async function getVideoById(id: number) {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(videos).where(eq(videos.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+export async function getAllVideos(): Promise<Video[]> {
+  const supabase = getSupabase();
+  
+  const { data, error } = await supabase
+    .from('videos')
+    .select('*')
+    .order('displayOrder', { ascending: false })
+    .order('createdAt', { ascending: false });
+
+  if (error) {
+    console.error("[Database] Failed to get all videos:", error);
+    return [];
+  }
+
+  return data as Video[];
 }
 
-export async function createVideo(video: InsertVideo) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(videos).values(video);
-  return result;
+export async function createVideo(video: Omit<Video, 'id' | 'createdAt' | 'updatedAt'>): Promise<Video> {
+  const supabase = getSupabase();
+  
+  const { data, error } = await supabase
+    .from('videos')
+    .insert(video)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("[Database] Failed to create video:", error);
+    throw error;
+  }
+
+  return data as Video;
 }
 
-export async function updateVideo(id: number, video: Partial<InsertVideo>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(videos).set(video).where(eq(videos.id, id));
+export async function updateVideo(id: number, updates: Partial<Omit<Video, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Video> {
+  const supabase = getSupabase();
+  
+  const { data, error } = await supabase
+    .from('videos')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("[Database] Failed to update video:", error);
+    throw error;
+  }
+
+  return data as Video;
 }
 
-export async function deleteVideo(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.delete(videos).where(eq(videos.id, id));
-}
+export async function deleteVideo(id: number): Promise<void> {
+  const supabase = getSupabase();
+  
+  const { error } = await supabase
+    .from('videos')
+    .delete()
+    .eq('id', id);
 
-// Project queries
-export async function getAllProjects() {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(projects).orderBy(desc(projects.displayOrder), desc(projects.createdAt));
-}
-
-export async function getPublishedProjects() {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(projects).where(eq(projects.isPublished, true)).orderBy(desc(projects.displayOrder), desc(projects.createdAt));
-}
-
-export async function getProjectById(id: number) {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(projects).where(eq(projects.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
-}
-
-export async function createProject(project: InsertProject) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(projects).values(project);
-  return result;
-}
-
-export async function updateProject(id: number, project: Partial<InsertProject>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(projects).set(project).where(eq(projects.id, id));
-}
-
-export async function deleteProject(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.delete(projects).where(eq(projects.id, id));
-}
-
-// Service queries
-export async function getAllServices() {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(services).orderBy(desc(services.displayOrder), desc(services.createdAt));
-}
-
-export async function getActiveServices() {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(services).where(eq(services.isActive, true)).orderBy(desc(services.displayOrder), desc(services.createdAt));
-}
-
-export async function getServiceById(id: number) {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(services).where(eq(services.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
-}
-
-export async function createService(service: InsertService) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(services).values(service);
-  return result;
-}
-
-export async function updateService(id: number, service: Partial<InsertService>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(services).set(service).where(eq(services.id, id));
-}
-
-export async function deleteService(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.delete(services).where(eq(services.id, id));
+  if (error) {
+    console.error("[Database] Failed to delete video:", error);
+    throw error;
+  }
 }

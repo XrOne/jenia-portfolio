@@ -49,3 +49,20 @@
 - [x] Ajouter un loader élégant pendant le chargement initial
 - [x] Optimiser la transition entre vidéos avec crossfade
 - [ ] Ajouter des métadonnées de cache pour S3
+- [x] Corriger l'erreur tRPC sur la page admin (HTML au lieu de JSON)
+
+## Migration Supabase
+- [x] Migrer package.json (mysql2 -> postgres)
+- [x] Migrer drizzle.config.ts (mysql -> postgresql)
+- [x] Migrer drizzle/schema.ts (mysql-core -> pg-core)
+- [x] Migrer server/db.ts (mysql2 -> postgres-js)
+- [x] Augmenter la limite d'upload à 2Go
+- [x] Nettoyer les anciennes migrations MySQL
+- [x] Tester pnpm db:push avec PostgreSQL (tables créées via MCP Supabase)
+- [ ] Tester l'upload de vidéos volumineuses
+- [x] Configurer DATABASE_URL avec l'URL PostgreSQL Supabase fournie
+- [x] Tester la connexion à Supabase PostgreSQL
+- [x] Installer @supabase/supabase-js
+- [x] Remplacer Drizzle ORM par Supabase JS Client dans server/db.ts
+- [x] Tester les opérations CRUD avec Supabase
+- [x] Corriger le nom du bucket Supabase (videos au lieu de jenia-videos)
