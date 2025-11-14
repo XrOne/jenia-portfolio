@@ -66,3 +66,15 @@
 - [x] Remplacer Drizzle ORM par Supabase JS Client dans server/db.ts
 - [x] Tester les opérations CRUD avec Supabase
 - [x] Corriger le nom du bucket Supabase (videos au lieu de jenia-videos)
+- [x] Redémarrer le serveur qui avait crashé
+- [x] Vérifier les logs du serveur
+- [ ] Corriger les crashs du serveur liés à Supabase
+- [ ] Vérifier que les variables d'environnement Supabase sont correctement chargées
+- [ ] Vérifier les limites de stockage du bucket Supabase
+- [ ] Vérifier les politiques RLS sur la table videos
+- [ ] Vérifier les permissions du bucket videos
+- [ ] Tester l'upload avec les logs détaillés côté serveur
+- [ ] Implémenter l'upload en chunks pour contourner les limites de taille
+- [ ] Vérifier que la limite du bucket a bien été appliquée côté Supabase
+- [x] Corriger l'erreur tRPC "Unexpected token '<'" sur la page admin
+- [x] Vérifier que les routes API /api/trpc fonctionnent correctement
