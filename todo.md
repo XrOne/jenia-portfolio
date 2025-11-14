@@ -84,3 +84,12 @@
 - [x] Ajouter des logs pour déboguer l'erreur d'enregistrement
 - [x] Vérifier les logs serveur pour identifier l'erreur exacte
 - [x] Synchroniser les vidéos uploadées directement sur Supabase avec la base de données
+
+## Phase actuelle : Implémentation de l'upload TUS (resumable)
+- [x] Installer tus-js-client pour les uploads resumable
+- [x] Modifier Admin.tsx pour utiliser le protocole TUS
+- [x] Configurer les variables d'environnement VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY
+- [x] Redémarrer le serveur avec les nouvelles variables
+- [ ] Tester l'upload d'une vidéo volumineuse via l'interface admin
+- [ ] Vérifier que la vidéo apparaît dans la liste et sur la page d'accueil
+- [ ] Vérifier que la barre de progression fonctionne correctement

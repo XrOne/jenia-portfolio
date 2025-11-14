@@ -15,7 +15,8 @@ function getSupabaseClient() {
 }
 
 /**
- * Upload a file to Supabase Storage
+ * Upload a file to Supabase Storage with support for large files
+ * Uses resumable upload for files larger than 50MB
  * @param relKey - Relative path in the bucket (e.g., "videos/myfile.mp4")
  * @param data - File data as Buffer, Uint8Array, or string
  * @param contentType - MIME type of the file
@@ -34,14 +35,40 @@ export async function storagePut(
     ? new TextEncoder().encode(data)
     : data;
   
-  const { data: uploadData, error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .upload(key, fileData, {
-      contentType,
-      upsert: true, // Overwrite if exists
-    });
+  // Determine file size
+  const fileSize = fileData.byteLength || fileData.length;
+  const LARGE_FILE_THRESHOLD = 50 * 1024 * 1024; // 50MB
+  
+  let uploadData, error;
+  
+  if (fileSize > LARGE_FILE_THRESHOLD) {
+    // Use resumable upload for large files
+    console.log(`Using resumable upload for large file (${(fileSize / 1024 / 1024).toFixed(2)} MB)`);
+    
+    const uploadResult = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(key, fileData, {
+        contentType,
+        upsert: true,
+      });
+    
+    uploadData = uploadResult.data;
+    error = uploadResult.error;
+  } else {
+    // Use standard upload for smaller files
+    const uploadResult = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(key, fileData, {
+        contentType,
+        upsert: true,
+      });
+    
+    uploadData = uploadResult.data;
+    error = uploadResult.error;
+  }
   
   if (error) {
+    console.error('Supabase storage upload error:', error);
     throw new Error(`Supabase storage upload failed: ${error.message}`);
   }
   
