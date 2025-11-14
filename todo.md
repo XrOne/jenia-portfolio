@@ -78,3 +78,9 @@
 - [ ] Vérifier que la limite du bucket a bien été appliquée côté Supabase
 - [x] Corriger l'erreur tRPC "Unexpected token '<'" sur la page admin
 - [x] Vérifier que les routes API /api/trpc fonctionnent correctement
+- [x] Diagnostiquer pourquoi les vidéos ne s'affichent pas après upload
+- [x] Vérifier que les vidéos sont bien enregistrées dans la base de données
+- [x] Vérifier que le frontend récupère et affiche les vidéos
+- [x] Ajouter des logs pour déboguer l'erreur d'enregistrement
+- [x] Vérifier les logs serveur pour identifier l'erreur exacte
+- [x] Synchroniser les vidéos uploadées directement sur Supabase avec la base de données

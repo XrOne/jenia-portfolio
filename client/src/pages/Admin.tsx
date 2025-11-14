@@ -33,6 +33,7 @@ export default function Admin() {
   const handleFileUpload = async (file: File, type: 'video' | 'thumbnail') => {
     setUploading(true);
     try {
+      console.log('Starting upload for:', file.name, 'Size:', file.size);
       const formData = new FormData();
       formData.append('file', file);
 
@@ -41,12 +42,20 @@ export default function Admin() {
         body: formData,
       });
 
-      if (!response.ok) throw new Error('Upload failed');
+      console.log('Upload response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Upload failed:', errorText);
+        throw new Error(`Upload failed: ${errorText}`);
+      }
 
       const data = await response.json();
+      console.log('Upload successful:', data);
       return data;
     } catch (error) {
-      toast.error('Erreur lors de l\'upload du fichier');
+      console.error('Upload error:', error);
+      toast.error(`Erreur lors de l'upload du fichier: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     } finally {
       setUploading(false);
@@ -102,7 +111,8 @@ export default function Admin() {
       setEditingVideo(null);
       refetch();
     } catch (error) {
-      toast.error('Erreur lors de l\'enregistrement');
+      console.error('Error saving video:', error);
+      toast.error(`Erreur lors de l'enregistrement: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
