@@ -14,13 +14,18 @@ const upload = multer({
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use SERVICE_ROLE_KEY to bypass RLS
   
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be defined');
   }
   
-  return createClient(supabaseUrl, supabaseKey);
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
 }
 
 router.post('/upload', upload.single('file'), async (req, res) => {
@@ -34,20 +39,21 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     const randomSuffix = Math.random().toString(36).substring(7);
     const fileKey = `videos/${timestamp}-${randomSuffix}-${file.originalname}`;
 
-    console.log(`Uploading file: ${file.originalname}, size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+    console.log(`[Upload] Starting upload: ${file.originalname}, size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
 
     const supabase = getSupabaseClient();
     
-    // Upload to Supabase Storage
+    // Upload to Supabase Storage using SERVICE_ROLE_KEY (bypasses RLS)
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('videos')
       .upload(fileKey, file.buffer, {
         contentType: file.mimetype,
         upsert: true,
+        cacheControl: '3600',
       });
 
     if (uploadError) {
-      console.error('Supabase upload error:', uploadError);
+      console.error('[Upload] Supabase upload error:', uploadError);
       return res.status(500).json({ 
         error: 'Upload failed', 
         details: uploadError.message 
@@ -59,7 +65,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       .from('videos')
       .getPublicUrl(fileKey);
 
-    console.log(`Upload successful: ${fileKey}`);
+    console.log(`[Upload] Upload successful: ${fileKey}`);
 
     res.json({
       url: publicUrl,
@@ -68,7 +74,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       mimetype: file.mimetype,
     });
   } catch (error) {
-    console.error('Upload error:', error);
+    console.error('[Upload] Upload error:', error);
     res.status(500).json({ 
       error: 'Upload failed',
       details: error instanceof Error ? error.message : 'Unknown error'

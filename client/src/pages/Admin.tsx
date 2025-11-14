@@ -10,13 +10,6 @@ import { Plus, Pencil, Trash2, Upload, Loader2, Home, LogOut } from "lucide-reac
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
-import * as tus from "tus-js-client";
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client for frontend
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function Admin() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -38,73 +31,50 @@ export default function Admin() {
     }
   }, [isAuthenticated, user, navigate]);
 
-  const uploadFileWithTus = async (file: File, type: 'video' | 'thumbnail'): Promise<{ url: string; key: string }> => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        // Get auth session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        // Generate file key
-        const timestamp = Date.now();
-        const randomSuffix = Math.random().toString(36).substring(7);
-        const fileKey = `videos/${timestamp}-${randomSuffix}-${file.name}`;
-        
-        // Extract project ID from Supabase URL
-        const projectId = supabaseUrl.replace('https://', '').split('.')[0];
-        
-        console.log(`Starting TUS upload for: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
-        
-        const upload = new tus.Upload(file, {
-          // Use direct storage hostname for better performance
-          endpoint: `https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`,
-          retryDelays: [0, 3000, 5000, 10000, 20000],
-          headers: {
-            authorization: `Bearer ${session?.access_token || supabaseAnonKey}`,
-            'x-upsert': 'true', // Overwrite if exists
-          },
-          uploadDataDuringCreation: true,
-          removeFingerprintOnSuccess: true,
-          metadata: {
-            bucketName: 'videos',
-            objectName: fileKey,
-            contentType: file.type,
-            cacheControl: '3600',
-          },
-          chunkSize: 6 * 1024 * 1024, // 6MB chunks (required by Supabase)
-          onError: (error) => {
-            console.error('TUS upload failed:', error);
-            reject(error);
-          },
-          onProgress: (bytesUploaded, bytesTotal) => {
-            const percentage = ((bytesUploaded / bytesTotal) * 100);
-            setUploadProgress(Math.round(percentage));
-            console.log(`Upload progress: ${percentage.toFixed(2)}%`);
-          },
-          onSuccess: () => {
-            console.log('TUS upload successful:', fileKey);
-            
-            // Get public URL
-            const { data: { publicUrl } } = supabase.storage
-              .from('videos')
-              .getPublicUrl(fileKey);
-            
-            resolve({ url: publicUrl, key: fileKey });
-          },
-        });
+  const handleFileUpload = async (file: File, type: 'video' | 'thumbnail') => {
+    return new Promise<{ url: string; key: string }>((resolve, reject) => {
+      const formData = new FormData();
+      formData.append('file', file);
 
-        // Check for previous uploads and resume if found
-        const previousUploads = await upload.findPreviousUploads();
-        if (previousUploads.length) {
-          console.log('Resuming previous upload...');
-          upload.resumeFromPreviousUpload(previousUploads[0]);
+      const xhr = new XMLHttpRequest();
+
+      // Track upload progress
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const percentComplete = Math.round((e.loaded / e.total) * 100);
+          setUploadProgress(percentComplete);
+          console.log(`[Upload] Progress: ${percentComplete}%`);
         }
+      });
 
-        // Start the upload
-        upload.start();
-      } catch (error) {
-        console.error('Error initializing TUS upload:', error);
-        reject(error);
-      }
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 200) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            console.log('[Upload] Success:', data);
+            resolve(data);
+          } catch (error) {
+            console.error('[Upload] Failed to parse response:', xhr.responseText);
+            reject(new Error('Invalid response from server'));
+          }
+        } else {
+          console.error('[Upload] Failed:', xhr.status, xhr.responseText);
+          reject(new Error(`Upload failed: ${xhr.responseText}`));
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        console.error('[Upload] Network error');
+        reject(new Error('Network error during upload'));
+      });
+
+      xhr.addEventListener('abort', () => {
+        console.error('[Upload] Upload aborted');
+        reject(new Error('Upload aborted'));
+      });
+
+      xhr.open('POST', '/api/upload');
+      xhr.send(formData);
     });
   };
 
@@ -125,8 +95,9 @@ export default function Admin() {
 
       // Upload video if new file selected
       if (videoFile && videoFile.size > 0) {
+        console.log('[Admin] Starting video upload:', videoFile.name, `(${(videoFile.size / 1024 / 1024).toFixed(2)} MB)`);
         toast.info('Upload de la vidéo en cours...');
-        const videoData = await uploadFileWithTus(videoFile, 'video');
+        const videoData = await handleFileUpload(videoFile, 'video');
         videoUrl = videoData.url;
         fileKey = videoData.key;
         toast.success('Vidéo uploadée avec succès');
@@ -134,8 +105,10 @@ export default function Admin() {
 
       // Upload thumbnail if new file selected
       if (thumbnailFile && thumbnailFile.size > 0) {
+        console.log('[Admin] Starting thumbnail upload:', thumbnailFile.name);
         toast.info('Upload de la miniature en cours...');
-        const thumbnailData = await uploadFileWithTus(thumbnailFile, 'thumbnail');
+        setUploadProgress(0);
+        const thumbnailData = await handleFileUpload(thumbnailFile, 'thumbnail');
         thumbnailUrl = thumbnailData.url;
         toast.success('Miniature uploadée avec succès');
       }
@@ -149,7 +122,7 @@ export default function Admin() {
         displayOrder: parseInt(formData.get('displayOrder') as string) || 0,
       };
 
-      console.log('Saving video to database:', videoData);
+      console.log('[Admin] Saving video to database:', videoData);
 
       if (editingVideo) {
         await updateVideo.mutateAsync({
@@ -167,10 +140,11 @@ export default function Admin() {
       setUploadProgress(0);
       refetch();
     } catch (error) {
-      console.error('Error saving video:', error);
+      console.error('[Admin] Error saving video:', error);
       toast.error(`Erreur lors de l'enregistrement: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 

@@ -93,3 +93,15 @@
 - [ ] Tester l'upload d'une vidéo volumineuse via l'interface admin
 - [ ] Vérifier que la vidéo apparaît dans la liste et sur la page d'accueil
 - [ ] Vérifier que la barre de progression fonctionne correctement
+
+## Correction erreur RLS Supabase
+- [ ] Diagnostiquer l'erreur "new row violates row-level security policy"
+- [ ] Créer les politiques RLS appropriées pour le bucket videos
+- [ ] Tester l'upload après correction des politiques
+- [ ] Vérifier que l'upload TUS fonctionne correctement
+
+## Contournement RLS : Upload côté serveur
+- [x] Modifier l'upload pour passer par le serveur au lieu du client
+- [x] Utiliser la clé SERVICE_ROLE_KEY qui contourne RLS
+- [x] Implémenter l'upload avec barre de progression (XMLHttpRequest)
+- [ ] Tester l'upload avec cette nouvelle approche
