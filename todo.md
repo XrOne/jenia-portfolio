@@ -105,3 +105,10 @@
 - [x] Utiliser la clé SERVICE_ROLE_KEY qui contourne RLS
 - [x] Implémenter l'upload avec barre de progression (XMLHttpRequest)
 - [ ] Tester l'upload avec cette nouvelle approche
+
+## Optimisation boucle vidéo sans latence
+- [x] Ajouter l'attribut loop natif sur la balise video (pour vidéo unique)
+- [x] Implémenter le preload="auto" pour charger la vidéo en avance
+- [x] Ajouter un événement onended pour redémarrer instantanément (fallback)
+- [x] Optimiser avec playsinline pour mobile
+- [x] Tester la fluidité de la boucle

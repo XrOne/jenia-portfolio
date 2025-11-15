@@ -22,9 +22,18 @@ export default function Home() {
     }
   }, [currentVideoIndex, videos]);
 
-  // Auto-play and loop through videos
+  // Auto-play and seamless loop
   useEffect(() => {
     if (videos && videos.length > 0 && videoRef.current) {
+      const video = videoRef.current;
+      
+      // For single video: use native loop for perfect seamless playback
+      if (videos.length === 1) {
+        video.loop = true;
+        return;
+      }
+      
+      // For multiple videos: handle transition
       const handleVideoEnd = () => {
         setIsTransitioning(true);
         setTimeout(() => {
@@ -33,11 +42,11 @@ export default function Home() {
         }, 300);
       };
       
-      const video = videoRef.current;
       video.addEventListener('ended', handleVideoEnd);
       
       return () => {
         video.removeEventListener('ended', handleVideoEnd);
+        video.loop = false;
       };
     }
   }, [videos]);
@@ -50,6 +59,9 @@ export default function Home() {
       video.src = videos[currentVideoIndex].videoUrl;
       video.load();
       
+      // Optimize for seamless playback
+      video.preload = 'auto';
+      
       // Wait for video to be ready before playing
       const handleCanPlay = () => {
         setIsVideoLoaded(true);
@@ -60,12 +72,22 @@ export default function Home() {
         setIsVideoLoaded(true);
       };
       
+      // Additional optimization: restart immediately if loop fails
+      const handleEnded = () => {
+        if (videos.length === 1) {
+          video.currentTime = 0;
+          video.play().catch(console.error);
+        }
+      };
+      
       video.addEventListener('canplay', handleCanPlay);
       video.addEventListener('loadeddata', handleLoadedData);
+      video.addEventListener('ended', handleEnded);
       
       return () => {
         video.removeEventListener('canplay', handleCanPlay);
         video.removeEventListener('loadeddata', handleLoadedData);
+        video.removeEventListener('ended', handleEnded);
       };
     }
   }, [currentVideoIndex, videos]);
@@ -92,18 +114,21 @@ export default function Home() {
             muted
             playsInline
             preload="auto"
+            loop={videos.length === 1} // Native loop for single video (perfectly seamless)
             style={{ 
               opacity: isVideoLoaded && !isTransitioning ? 1 : 0, 
               transition: 'opacity 0.5s ease-in-out' 
             }}
           />
           {/* Hidden video element for preloading next video */}
-          <video
-            ref={nextVideoRef}
-            className="hidden"
-            preload="auto"
-            muted
-          />
+          {videos.length > 1 && (
+            <video
+              ref={nextVideoRef}
+              className="hidden"
+              preload="auto"
+              muted
+            />
+          )}
         </>
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900" />
