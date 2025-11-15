@@ -4,6 +4,7 @@ import { Linkedin, Mail, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 
+// Optimized for seamless video looping
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const { data: videos } = trpc.videos.list.useQuery();
