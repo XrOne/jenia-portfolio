@@ -112,3 +112,11 @@
 - [x] Ajouter un événement onended pour redémarrer instantanément (fallback)
 - [x] Optimiser avec playsinline pour mobile
 - [x] Tester la fluidité de la boucle
+
+## Problèmes à résoudre
+- [ ] Diagnostiquer pourquoi l'upload de vidéos bug
+- [ ] Vérifier les logs du serveur pour identifier l'erreur
+- [ ] Corriger le bug d'upload
+- [ ] Forcer la création d'un nouveau checkpoint valide
+- [ ] Supprimer l'ancienne version publiée si nécessaire
+- [ ] Tester l'upload et la publication
