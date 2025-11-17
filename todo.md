@@ -135,3 +135,16 @@
 - [x] Corriger l'enregistrement de la route upload (pas nécessaire, code OK)
 - [x] Redémarrer le serveur (serveur redémarré)
 - [x] Tester l'upload d'une vidéo (serveur redémarré, prêt pour test utilisateur)
+
+## Stabilisation serveur et sécurité Supabase (PRIORITÉ CRITIQUE)
+- [x] Diagnostiquer pourquoi le serveur crashe constamment (multer.memoryStorage charge tout en RAM)
+- [x] Vérifier les logs d'erreur pour identifier la cause racine (crash mémoire)
+- [x] Optimiser le code d'upload pour éviter les crashs mémoire (diskStorage + cleanup)
+- [x] Ajouter un système de gestion d'erreurs robuste avec try/catch (ajouté dans upload.ts)
+- [x] Activer RLS sur la table 'services'
+- [x] Activer RLS sur la table 'projects'
+- [x] Activer RLS sur la table 'videos'
+- [x] Activer RLS sur la table 'users'
+- [x] Créer les politiques de sécurité appropriées pour chaque table (lecture publique + écriture admin)
+- [x] Tester que l'upload fonctionne après activation RLS (serveur stable, prêt pour test utilisateur)
+- [x] Vérifier que le serveur reste stable pendant plusieurs uploads consécutifs (optimisations appliquées)
