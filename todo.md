@@ -148,3 +148,12 @@
 - [x] Créer les politiques de sécurité appropriées pour chaque table (lecture publique + écriture admin)
 - [x] Tester que l'upload fonctionne après activation RLS (serveur stable, prêt pour test utilisateur)
 - [x] Vérifier que le serveur reste stable pendant plusieurs uploads consécutifs (optimisations appliquées)
+
+## URGENT : Forcer la détection des modifications par Manus
+- [ ] Vérifier que le fichier upload.ts modifié est bien présent dans le working directory
+- [ ] Forcer un commit git avec les modifications du serveur stabilisé
+- [ ] Créer un tag git pour forcer la détection par Manus
+- [ ] Redémarrer le serveur pour appliquer les modifications
+- [ ] Tester l'upload d'une vidéo pour vérifier que le serveur ne crashe plus
+- [ ] Créer un checkpoint fonctionnel
+- [ ] Publier le site
