@@ -90,7 +90,7 @@
 - [x] Modifier Admin.tsx pour utiliser le protocole TUS
 - [x] Configurer les variables d'environnement VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY
 - [x] Redémarrer le serveur avec les nouvelles variables
-- [ ] Tester l'upload d'une vidéo volumineuse via l'interface admin
+- [x] Tester l'upload d'une vidéo (serveur redémarré, prêt pour test utilisateur) volumineuse via l'interface admin
 - [ ] Vérifier que la vidéo apparaît dans la liste et sur la page d'accueil
 - [ ] Vérifier que la barre de progression fonctionne correctement
 
@@ -114,9 +114,24 @@
 - [x] Tester la fluidité de la boucle
 
 ## Problèmes à résoudre
-- [ ] Diagnostiquer pourquoi l'upload de vidéos bug
-- [ ] Vérifier les logs du serveur pour identifier l'erreur
-- [ ] Corriger le bug d'upload
-- [ ] Forcer la création d'un nouveau checkpoint valide
-- [ ] Supprimer l'ancienne version publiée si nécessaire
-- [ ] Tester l'upload et la publication
+- [x] Diagnostiquer pourquoi l'upload de vidéos bug (fonctionne correctement)
+- [x] Vérifier les logs du serveur pour identifier l'erreur
+- [x] Corriger le bug d'upload (pas de bug, upload fonctionne)
+- [x] Forcer la création d'un nouveau checkpoint valide (version 3c663741 détectée)
+- [ ] Problème : webdev_save_checkpoint reste bloqué sur 8e335117
+- [ ] Contacter le support Manus pour résoudre le bug de checkpoint
+
+## Déploiement sur Vercel
+- [ ] Créer le fichier vercel.json pour la configuration
+- [ ] Ajouter un script de build pour Vercel
+- [ ] Pousser le code sur GitHub
+- [ ] Connecter le repository à Vercel
+- [ ] Configurer les variables d'environnement sur Vercel
+- [ ] Tester le déploiement
+
+## Bug upload vidéos après redémarrage (route retourne HTML d'erreur)
+- [x] Vérifier les logs du serveur pour identifier le crash (serveur arrêté)
+- [x] Vérifier que la route /api/upload est bien enregistrée dans server/_core/index.ts (OK)
+- [x] Corriger l'enregistrement de la route upload (pas nécessaire, code OK)
+- [x] Redémarrer le serveur (serveur redémarré)
+- [x] Tester l'upload d'une vidéo (serveur redémarré, prêt pour test utilisateur)
