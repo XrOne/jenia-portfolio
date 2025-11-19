@@ -150,10 +150,18 @@
 - [x] Vérifier que le serveur reste stable pendant plusieurs uploads consécutifs (optimisations appliquées)
 
 ## URGENT : Forcer la détection des modifications par Manus
-- [ ] Vérifier que le fichier upload.ts modifié est bien présent dans le working directory
-- [ ] Forcer un commit git avec les modifications du serveur stabilisé
-- [ ] Créer un tag git pour forcer la détection par Manus
-- [ ] Redémarrer le serveur pour appliquer les modifications
-- [ ] Tester l'upload d'une vidéo pour vérifier que le serveur ne crashe plus
+- [x] Vérifier que le fichier upload.ts modifié est bien présent dans le working directory
+- [x] Forcer un commit git avec les modifications du serveur stabilisé (commit a418f9ea)
+- [x] Créer un tag git pour forcer la détection par Manus (pas nécessaire, commit détecté)
+- [x] Redémarrer le serveur pour appliquer les modifications (version a418f9ea détectée)
+- [ ] Tester l'upload d'une vidéo pour vérifier que le serveur ne crashe plus (prêt pour test utilisateur)
 - [ ] Créer un checkpoint fonctionnel
 - [ ] Publier le site
+
+## Déploiement sur Railway (alternative à Manus)
+- [x] Créer un guide de déploiement Railway complet (DEPLOY_RAILWAY.md)
+- [x] Créer le fichier railway.toml pour la configuration
+- [x] Créer le fichier ENV_VARIABLES.md pour documenter les variables
+- [x] Documenter la configuration des variables d'environnement
+- [x] Expliquer comment connecter le repository GitHub
+- [x] Livrer le guide et les fichiers au utilisateur
