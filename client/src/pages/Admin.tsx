@@ -1,4 +1,4 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { SupabaseAuth, supabase } from "@/components/SupabaseAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -12,7 +12,8 @@ import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
 
 export default function Admin() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const [session, setSession] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
   const [, navigate] = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVideo, setEditingVideo] = useState<any>(null);
@@ -24,12 +25,49 @@ export default function Admin() {
   const updateVideo = trpc.videos.update.useMutation();
   const deleteVideo = trpc.videos.delete.useMutation();
 
-  // Redirect if not admin
+  // Check if user is admin in database
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'admin') {
-      navigate('/');
+    if (session?.user?.email) {
+      // Fetch user role from database via tRPC
+      fetch('/api/trpc/auth.me', {
+        credentials: 'include',
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.result?.data?.role === 'admin') {
+            setUser(data.result.data);
+          } else {
+            navigate('/');
+          }
+        })
+        .catch(() => navigate('/'));
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [session, navigate]);
+
+  const handleAuthSuccess = (newSession: any) => {
+    setSession(newSession);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setUser(null);
+    navigate('/');
+  };
+
+  // Show auth screen if not authenticated
+  if (!session) {
+    return <SupabaseAuth onAuthSuccess={handleAuthSuccess} />;
+  }
+
+  // Show loading while checking admin role
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   const handleFileUpload = async (file: File, type: 'video' | 'thumbnail') => {
     return new Promise<{ url: string; key: string }>((resolve, reject) => {
@@ -171,9 +209,7 @@ export default function Admin() {
     setUploadProgress(0);
   };
 
-  if (!isAuthenticated || user?.role !== 'admin') {
-    return null;
-  }
+  // Auth check already done above, this is redundant
 
   return (
     <div className="min-h-screen bg-background">
@@ -190,7 +226,7 @@ export default function Admin() {
                 Retour au site
               </Button>
             </Link>
-            <Button variant="ghost" size="sm" onClick={() => logout()}>
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               Déconnexion
             </Button>
