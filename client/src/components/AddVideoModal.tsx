@@ -9,7 +9,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, Check } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -32,6 +32,8 @@ interface AddVideoModalProps {
 
 export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) {
     const { toast } = useToast();
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [formData, setFormData] = useState<VideoFormData>({
         title: "",
         description: "",
@@ -72,8 +74,88 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
         },
     });
 
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Check file type
+        if (!file.type.startsWith('video/')) {
+            toast({
+                title: "Erreur",
+                description: "Veuillez sélectionner un fichier vidéo",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setUploading(true);
+        setUploadProgress(0);
+
+        try {
+            const formDataUpload = new FormData();
+            formDataUpload.append('file', file);
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formDataUpload,
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.details || 'Upload failed');
+            }
+
+            const data = await response.json();
+
+            // Auto-fill form with uploaded data
+            setFormData(prev => ({
+                ...prev,
+                videoUrl: data.url,
+                fileKey: data.key,
+                title: prev.title || file.name.replace(/\.[^/.]+$/, ""), // Remove extension for title
+            }));
+
+            // Get video duration if possible
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            video.onloadedmetadata = function () {
+                setFormData(prev => ({
+                    ...prev,
+                    duration: Math.round(video.duration),
+                }));
+                window.URL.revokeObjectURL(video.src);
+            };
+            video.src = URL.createObjectURL(file);
+
+            toast({
+                title: "Succès",
+                description: "Vidéo uploadée sur Supabase",
+            });
+
+            setUploadProgress(100);
+        } catch (error: any) {
+            toast({
+                title: "Erreur d'upload",
+                description: error.message || "Échec de l'upload",
+                variant: "destructive",
+            });
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!formData.videoUrl || !formData.fileKey) {
+            toast({
+                title: "Erreur",
+                description: "Veuillez d'abord uploader une vidéo",
+                variant: "destructive",
+            });
+            return;
+        }
+
         createVideo.mutate(formData);
     };
 
@@ -84,6 +166,35 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
                     <DialogTitle>Ajouter une vidéo</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* File Upload */}
+                    <div className="space-y-2">
+                        <Label htmlFor="file">Fichier vidéo *</Label>
+                        <div className="flex items-center gap-2">
+                            <Input
+                                id="file"
+                                type="file"
+                                accept="video/*"
+                                onChange={handleFileUpload}
+                                disabled={uploading || createVideo.isPending}
+                                className="cursor-pointer"
+                            />
+                            {formData.videoUrl && !uploading && (
+                                <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                            )}
+                        </div>
+                        {uploading && (
+                            <div className="flex items-center gap-2 text-sm text-gray-400">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Upload vers Supabase en cours...
+                            </div>
+                        )}
+                        {formData.videoUrl && (
+                            <p className="text-xs text-green-500">
+                                ✓ Vidéo uploadée : {formData.fileKey}
+                            </p>
+                        )}
+                    </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="title">Titre *</Label>
                         <Input
@@ -92,6 +203,7 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                             required
                             disabled={createVideo.isPending}
+                            placeholder="Titre de la vidéo"
                         />
                     </div>
 
@@ -102,19 +214,7 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             disabled={createVideo.isPending}
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="videoUrl">URL de la vidéo *</Label>
-                        <Input
-                            id="videoUrl"
-                            type="url"
-                            value={formData.videoUrl}
-                            onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
-                            placeholder="https://..."
-                            required
-                            disabled={createVideo.isPending}
+                            placeholder="Description (optionnelle)"
                         />
                     </div>
 
@@ -126,18 +226,6 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
                             value={formData.thumbnailUrl}
                             onChange={(e) => setFormData({ ...formData, thumbnailUrl: e.target.value })}
                             placeholder="https://..."
-                            disabled={createVideo.isPending}
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="fileKey">Clé du fichier *</Label>
-                        <Input
-                            id="fileKey"
-                            value={formData.fileKey}
-                            onChange={(e) => setFormData({ ...formData, fileKey: e.target.value })}
-                            placeholder="video_123"
-                            required
                             disabled={createVideo.isPending}
                         />
                     </div>
@@ -154,6 +242,7 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
                                     duration: e.target.value ? Number(e.target.value) : null
                                 })}
                                 disabled={createVideo.isPending}
+                                placeholder="Auto-détecté"
                             />
                         </div>
 
@@ -189,11 +278,14 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
                             type="button"
                             variant="outline"
                             onClick={onClose}
-                            disabled={createVideo.isPending}
+                            disabled={createVideo.isPending || uploading}
                         >
                             Annuler
                         </Button>
-                        <Button type="submit" disabled={createVideo.isPending}>
+                        <Button
+                            type="submit"
+                            disabled={createVideo.isPending || uploading || !formData.videoUrl}
+                        >
                             {createVideo.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Ajouter
                         </Button>
