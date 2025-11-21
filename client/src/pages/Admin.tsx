@@ -153,75 +153,59 @@ export default function Admin() {
                   <p className="text-gray-400 text-center py-8">
                     Aucune vidéo. Cliquez sur "Ajouter une vidéo" pour commencer.
                   </p>
-                )}
-              </CardContent>
-            </Card>
-
-            <AddVideoModal
-              open={showAddVideoModal}
-              onClose={() => setShowAddVideoModal(false)}
-              onSuccess={() => refetchVideos()}
-            />
-          </TabsContent>
-
-          <TabsContent value="missions" className="space-y-4">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-white">Missions Clients</CardTitle>
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="mr-2 h-4 w-4" /> Nouvelle Mission
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-400 text-sm">
-                  Gérez les projets clients (Declics, L'Oréal, etc).
-                </p>
-                <div className="mt-4 p-4 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
-                  Liste des missions (À implémenter)
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-400 text-sm">
+                Gérez les projets clients (Declics, L'Oréal, etc).
+              </p>
+              <div className="mt-4 p-4 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
+                Liste des missions (À implémenter)
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          <TabsContent value="workflows" className="space-y-4">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-white">Workflows & Démos</CardTitle>
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="mr-2 h-4 w-4" /> Nouveau Workflow
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-400 text-sm">
-                  Ajoutez des workflows techniques liés aux missions.
-                </p>
-                <div className="mt-4 p-4 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
-                  Liste des workflows (À implémenter)
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+        <TabsContent value="workflows" className="space-y-4">
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-white">Workflows & Démos</CardTitle>
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="mr-2 h-4 w-4" /> Nouveau Workflow
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-400 text-sm">
+                Ajoutez des workflows techniques liés aux missions.
+              </p>
+              <div className="mt-4 p-4 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
+                Liste des workflows (À implémenter)
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          <TabsContent value="experience" className="space-y-4">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-white">Expérience & R&D</CardTitle>
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="mr-2 h-4 w-4" /> Nouvel Article/Média
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-400 text-sm">
-                  Publiez des notebooks, podcasts ou vidéos de veille.
-                </p>
-                <div className="mt-4 p-4 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
-                  Liste des contenus R&D (À implémenter)
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+        <TabsContent value="experience" className="space-y-4">
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-white">Expérience & R&D</CardTitle>
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="mr-2 h-4 w-4" /> Nouvel Article/Média
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-400 text-sm">
+                Publiez des notebooks, podcasts ou vidéos de veille.
+              </p>
+              <div className="mt-4 p-4 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
+                Liste des contenus R&D (À implémenter)
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
+    </div >
   );
 }
