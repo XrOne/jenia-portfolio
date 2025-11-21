@@ -31,22 +31,10 @@ export function LoginForm() {
             if (error) throw error;
 
             if (data.session) {
-                // Sync session with server
-                const syncResponse = await fetch('/api/auth/supabase-sync', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        access_token: data.session.access_token,
-                    }),
-                });
+                // Store session in localStorage for client-side persistence
+                localStorage.setItem('supabase.session', JSON.stringify(data.session));
 
-                if (!syncResponse.ok) {
-                    throw new Error('Failed to sync session with server');
-                }
-
-                // Redirect to force re-authentication check
+                // Redirect to admin page
                 window.location.href = '/admin';
             }
         } catch (error: any) {
