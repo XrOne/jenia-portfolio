@@ -29,20 +29,25 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
-async function startServer() {
+export function createApp() {
   const app = express();
-  const server = createServer(app);
+
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
   // Supabase Auth middleware
   app.use(supabaseAuthMiddleware);
+
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+
   // Supabase Auth sync endpoint
   app.post("/api/auth/supabase-sync", syncSupabaseSession);
+
   // File upload API
   app.use("/api", uploadRouter);
+
   // tRPC API
   app.use(
     "/api/trpc",
@@ -51,11 +56,24 @@ async function startServer() {
       createContext,
     })
   );
-  // development mode uses Vite, production mode uses static files
+
+  // development mode uses Vite, production mode uses static files in non-serverless env
+  if (process.env.NODE_ENV === "development") {
+    // Vite will be setup separately in startServer
+  } else if (!process.env.VERCEL) {
+    serveStatic(app);
+  }
+
+  return app;
+}
+
+async function startServer() {
+  const app = createApp();
+  const server = createServer(app);
+
+  // Setup Vite in development
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
-  } else {
-    serveStatic(app);
   }
 
   const preferredPort = parseInt(process.env.PORT || "3000");
@@ -70,4 +88,8 @@ async function startServer() {
   });
 }
 
-startServer().catch(console.error);
+// Only start server if not in Vercel (serverless) environment
+if (!process.env.VERCEL) {
+  startServer().catch(console.error);
+}
+

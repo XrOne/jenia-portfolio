@@ -4,16 +4,8 @@
   "outputDirectory": "dist/public",
   "routes": [
     {
-      "src": "/api/oauth/(.*)",
-      "dest": "/dist/index.js"
-    },
-    {
-      "src": "/api/upload",
-      "dest": "/dist/index.js"
-    },
-    {
-      "src": "/api/trpc/(.*)",
-      "dest": "/dist/index.js"
+      "src": "/api/(.*)",
+      "dest": "/api/index.ts"
     },
     {
       "handle": "filesystem"
