@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import uploadRouter from "../upload";
+import { syncSupabaseSession, supabaseAuthMiddleware } from "../supabase-auth";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -34,8 +35,12 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Supabase Auth middleware
+  app.use(supabaseAuthMiddleware);
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  // Supabase Auth sync endpoint
+  app.post("/api/auth/supabase-sync", syncSupabaseSession);
   // File upload API
   app.use("/api", uploadRouter);
   // tRPC API

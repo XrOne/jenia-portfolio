@@ -56,6 +56,21 @@ export function SupabaseAuth({ onAuthSuccess }: { onAuthSuccess: (session: any) 
         });
         if (error) throw error;
         if (data.session) {
+          // Sync session with server
+          const syncResponse = await fetch('/api/auth/supabase-sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              access_token: data.session.access_token,
+            }),
+          });
+          
+          if (!syncResponse.ok) {
+            throw new Error('Failed to sync session with server');
+          }
+          
           onAuthSuccess(data.session);
         }
       }

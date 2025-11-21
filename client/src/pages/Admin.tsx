@@ -28,19 +28,26 @@ export default function Admin() {
   // Check if user is admin in database
   useEffect(() => {
     if (session?.user?.email) {
-      // Fetch user role from database via tRPC
-      fetch('/api/trpc/auth.me', {
-        credentials: 'include',
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.result?.data?.role === 'admin') {
-            setUser(data.result.data);
-          } else {
-            navigate('/');
-          }
+      // Small delay to ensure cookie is set
+      setTimeout(() => {
+        fetch('/api/trpc/auth.me', {
+          credentials: 'include',
         })
-        .catch(() => navigate('/'));
+          .then(res => res.json())
+          .then(data => {
+            if (data.result?.data?.role === 'admin') {
+              setUser(data.result.data);
+            } else {
+              alert('Accès refusé : vous devez être administrateur');
+              navigate('/');
+            }
+          })
+          .catch((error) => {
+            console.error('Error fetching user:', error);
+            alert('Erreur lors de la vérification des permissions');
+            navigate('/');
+          });
+      }, 500);
     }
   }, [session, navigate]);
 
