@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
+import { SupabaseAuth } from "@/components/SupabaseAuth";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Plus, Trash2, Video, Briefcase, FileText, Lightbulb } from "lucide-react";
 import { useState } from "react";
@@ -14,16 +15,21 @@ export default function Admin() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("videos");
 
-  // Redirect if not admin
-  if (!isAuthLoading && (!user || user.role !== "admin")) {
-    setLocation("/");
-    return null;
-  }
-
   if (isAuthLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
         <Loader2 className="h-8 w-8 animate-spin text-white" />
+      </div>
+    );
+  }
+
+  // Show login form if not authenticated or not admin
+  if (!user || user.role !== "admin") {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <div className="w-full max-w-md">
+          <SupabaseAuth onAuthSuccess={() => window.location.reload()} />
+        </div>
       </div>
     );
   }
