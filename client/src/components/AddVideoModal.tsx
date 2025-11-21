@@ -9,9 +9,16 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
-import { Loader2, Upload, Check } from "lucide-react";
+import { Loader2, Upload, Check, AlertCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useToast } from "@/components/ui/use-toast";
+import { createClient } from "@supabase/supabase-js";
+
+// Initialize Supabase client
+const supabase = createClient(
+    import.meta.env.VITE_SUPABASE_URL,
+    import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 interface VideoFormData {
     title: string;
@@ -33,7 +40,7 @@ interface AddVideoModalProps {
 export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) {
     const { toast } = useToast();
     const [uploading, setUploading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadError, setUploadError] = useState<string | null>(null);
     const [formData, setFormData] = useState<VideoFormData>({
         title: "",
         description: "",
@@ -64,6 +71,7 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
                 displayOrder: 0,
                 isActive: true,
             });
+            setUploadError(null);
         },
         onError: (error) => {
             toast({
@@ -89,29 +97,41 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
         }
 
         setUploading(true);
-        setUploadProgress(0);
+        setUploadError(null);
 
         try {
-            const formDataUpload = new FormData();
-            formDataUpload.append('file', file);
+            const timestamp = Date.now();
+            const randomSuffix = Math.random().toString(36).substring(7);
+            const fileKey = `videos/${timestamp}-${randomSuffix}-${file.name}`;
 
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formDataUpload,
-            });
+            console.log('Uploading to Supabase Storage:', fileKey);
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.details || 'Upload failed');
+            // Upload directly to Supabase Storage from client
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('videos')
+                .upload(fileKey, file, {
+                    contentType: file.type,
+                    upsert: false,
+                    cacheControl: '3600',
+                });
+
+            if (uploadError) {
+                console.error('Supabase upload error:', uploadError);
+                throw new Error(uploadError.message);
             }
 
-            const data = await response.json();
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('videos')
+                .getPublicUrl(fileKey);
+
+            console.log('Upload successful! Public URL:', publicUrl);
 
             // Auto-fill form with uploaded data
             setFormData(prev => ({
                 ...prev,
-                videoUrl: data.url,
-                fileKey: data.key,
+                videoUrl: publicUrl,
+                fileKey: fileKey,
                 title: prev.title || file.name.replace(/\.[^/.]+$/, ""), // Remove extension for title
             }));
 
@@ -131,9 +151,9 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
                 title: "Succès",
                 description: "Vidéo uploadée sur Supabase",
             });
-
-            setUploadProgress(100);
         } catch (error: any) {
+            console.error('Upload error:', error);
+            setUploadError(error.message || "Échec de l'upload");
             toast({
                 title: "Erreur d'upload",
                 description: error.message || "Échec de l'upload",
@@ -183,9 +203,15 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
                             )}
                         </div>
                         {uploading && (
-                            <div className="flex items-center gap-2 text-sm text-gray-400">
+                            <div className="flex items-center gap-2 text-sm text-blue-400">
                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                Upload vers Supabase en cours...
+                                Upload direct vers Supabase en cours...
+                            </div>
+                        )}
+                        {uploadError && (
+                            <div className="flex items-center gap-2 text-sm text-red-400">
+                                <AlertCircle className="h-4 w-4" />
+                                {uploadError}
                             </div>
                         )}
                         {formData.videoUrl && (
@@ -285,6 +311,7 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
                         <Button
                             type="submit"
                             disabled={createVideo.isPending || uploading || !formData.videoUrl}
+                            className="bg-green-600 hover:bg-green-700"
                         >
                             {createVideo.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Ajouter
