@@ -5,7 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { LoginForm } from "@/components/LoginForm";
 import { AddVideoModal } from "@/components/AddVideoModal";
-import { SupabaseAuth } from "@/components/SupabaseAuth";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Plus, Trash2, Video, Briefcase, FileText, Lightbulb } from "lucide-react";
 import { useState } from "react";
@@ -100,6 +99,76 @@ export default function Admin() {
             <TabsTrigger value="experience" className="data-[state=active]:bg-zinc-800">
               <Lightbulb className="mr-2 h-4 w-4" /> Expérience (R&D)
             </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="videos" className="space-y-4">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-white">Gestion des Vidéos</CardTitle>
+                <Button
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => setShowAddVideoModal(true)}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Ajouter une vidéo
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {videos && videos.length > 0 ? (
+                  <div className="space-y-2">
+                    {videos.map((video) => (
+                      <div
+                        key={video.id}
+                        className="flex items-center justify-between p-4 bg-zinc-800 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <h3 className="text-white font-medium">{video.title}</h3>
+                          {video.description && (
+                            <p className="text-gray-400 text-sm">{video.description}</p>
+                          )}
+                          <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                            <span>Ordre: {video.displayOrder}</span>
+                            {video.duration && <span>Durée: {video.duration}s</span>}
+                            <span className={video.isActive ? "text-green-500" : "text-red-500"}>
+                              {video.isActive ? "Active" : "Inactive"}
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => {
+                            if (confirm("Supprimer cette vidéo ?")) {
+                              deleteVideo.mutate({ id: video.id });
+                            }
+                          }}
+                          disabled={deleteVideo.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-center py-8">
+                    Aucune vidéo. Cliquez sur "Ajouter une vidéo" pour commencer.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <AddVideoModal
+              open={showAddVideoModal}
+              onClose={() => setShowAddVideoModal(false)}
+              onSuccess={() => refetchVideos()}
+            />
+          </TabsContent>
+
+          <TabsContent value="missions" className="space-y-4">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-white">Missions Clients</CardTitle>
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="mr-2 h-4 w-4" /> Nouvelle Mission
                 </Button>
               </CardHeader>
@@ -151,8 +220,8 @@ export default function Admin() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs >
-      </div >
-    </div >
+        </Tabs>
+      </div>
+    </div>
   );
 }
