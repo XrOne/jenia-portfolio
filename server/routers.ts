@@ -3,7 +3,10 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
-import { getActiveVideos, getAllVideos, createVideo, updateVideo, deleteVideo } from "./db";
+import {
+  getActiveVideos, getAllVideos, createVideo, updateVideo, deleteVideo,
+  getMissions, getMissionById, getExperiencePosts
+} from "./db";
 import { TRPCError } from "@trpc/server";
 
 // Admin-only procedure
@@ -76,6 +79,25 @@ export const appRouter = router({
         await deleteVideo(input.id);
         return { success: true };
       }),
+  }),
+
+  // Mission routes
+  missions: router({
+    list: publicProcedure.query(async () => {
+      return getMissions();
+    }),
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return getMissionById(input.id);
+      }),
+  }),
+
+  // Experience routes
+  experience: router({
+    list: publicProcedure.query(async () => {
+      return getExperiencePosts();
+    }),
   }),
 });
 

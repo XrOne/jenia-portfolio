@@ -1,384 +1,137 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
 import { trpc } from "@/lib/trpc";
-import { Plus, Pencil, Trash2, Upload, Loader2, Home, LogOut } from "lucide-react";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
-import { Link, useLocation } from "wouter";
+import { Loader2, Plus, Trash2, Video, Briefcase, FileText, Lightbulb } from "lucide-react";
+import { useState } from "react";
+import { useLocation } from "wouter";
 
 export default function Admin() {
-  const { user, isAuthenticated, logout } = useAuth();
-  const [, navigate] = useLocation();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingVideo, setEditingVideo] = useState<any>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-
-  const { data: videos, isLoading, refetch } = trpc.videos.listAll.useQuery();
-  const createVideo = trpc.videos.create.useMutation();
-  const updateVideo = trpc.videos.update.useMutation();
-  const deleteVideo = trpc.videos.delete.useMutation();
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("videos");
 
   // Redirect if not admin
-  useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'admin') {
-      navigate('/');
-    }
-  }, [isAuthenticated, user, navigate]);
-
-  const handleFileUpload = async (file: File, type: 'video' | 'thumbnail') => {
-    return new Promise<{ url: string; key: string }>((resolve, reject) => {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const xhr = new XMLHttpRequest();
-
-      // Track upload progress
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          const percentComplete = Math.round((e.loaded / e.total) * 100);
-          setUploadProgress(percentComplete);
-          console.log(`[Upload] Progress: ${percentComplete}%`);
-        }
-      });
-
-      xhr.addEventListener('load', () => {
-        if (xhr.status === 200) {
-          try {
-            const data = JSON.parse(xhr.responseText);
-            console.log('[Upload] Success:', data);
-            resolve(data);
-          } catch (error) {
-            console.error('[Upload] Failed to parse response:', xhr.responseText);
-            reject(new Error('Invalid response from server'));
-          }
-        } else {
-          console.error('[Upload] Failed:', xhr.status, xhr.responseText);
-          reject(new Error(`Upload failed: ${xhr.responseText}`));
-        }
-      });
-
-      xhr.addEventListener('error', () => {
-        console.error('[Upload] Network error');
-        reject(new Error('Network error during upload'));
-      });
-
-      xhr.addEventListener('abort', () => {
-        console.error('[Upload] Upload aborted');
-        reject(new Error('Upload aborted'));
-      });
-
-      xhr.open('POST', '/api/upload');
-      xhr.send(formData);
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    const videoFile = formData.get('videoFile') as File;
-    const thumbnailFile = formData.get('thumbnailFile') as File;
-
-    try {
-      setUploading(true);
-      setUploadProgress(0);
-
-      let videoUrl = editingVideo?.videoUrl;
-      let thumbnailUrl = editingVideo?.thumbnailUrl;
-      let fileKey = editingVideo?.fileKey;
-
-      // Upload video if new file selected
-      if (videoFile && videoFile.size > 0) {
-        console.log('[Admin] Starting video upload:', videoFile.name, `(${(videoFile.size / 1024 / 1024).toFixed(2)} MB)`);
-        toast.info('Upload de la vidéo en cours...');
-        const videoData = await handleFileUpload(videoFile, 'video');
-        videoUrl = videoData.url;
-        fileKey = videoData.key;
-        toast.success('Vidéo uploadée avec succès');
-      }
-
-      // Upload thumbnail if new file selected
-      if (thumbnailFile && thumbnailFile.size > 0) {
-        console.log('[Admin] Starting thumbnail upload:', thumbnailFile.name);
-        toast.info('Upload de la miniature en cours...');
-        setUploadProgress(0);
-        const thumbnailData = await handleFileUpload(thumbnailFile, 'thumbnail');
-        thumbnailUrl = thumbnailData.url;
-        toast.success('Miniature uploadée avec succès');
-      }
-
-      const videoData = {
-        title: formData.get('title') as string,
-        description: formData.get('description') as string || undefined,
-        videoUrl: videoUrl!,
-        thumbnailUrl: thumbnailUrl || undefined,
-        fileKey: fileKey!,
-        displayOrder: parseInt(formData.get('displayOrder') as string) || 0,
-      };
-
-      console.log('[Admin] Saving video to database:', videoData);
-
-      if (editingVideo) {
-        await updateVideo.mutateAsync({
-          id: editingVideo.id,
-          ...videoData,
-        });
-        toast.success('Vidéo mise à jour avec succès');
-      } else {
-        await createVideo.mutateAsync(videoData);
-        toast.success('Vidéo ajoutée avec succès');
-      }
-
-      setIsDialogOpen(false);
-      setEditingVideo(null);
-      setUploadProgress(0);
-      refetch();
-    } catch (error) {
-      console.error('[Admin] Error saving video:', error);
-      toast.error(`Erreur lors de l'enregistrement: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setUploading(false);
-      setUploadProgress(0);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette vidéo ?')) return;
-
-    try {
-      await deleteVideo.mutateAsync({ id });
-      toast.success('Vidéo supprimée avec succès');
-      refetch();
-    } catch (error) {
-      toast.error('Erreur lors de la suppression');
-    }
-  };
-
-  const handleEdit = (video: any) => {
-    setEditingVideo(video);
-    setIsDialogOpen(true);
-  };
-
-  const handleDialogClose = () => {
-    setIsDialogOpen(false);
-    setEditingVideo(null);
-    setUploadProgress(0);
-  };
-
-  if (!isAuthenticated || user?.role !== 'admin') {
+  if (!isAuthLoading && (!user || user.role !== "admin")) {
+    setLocation("/");
     return null;
   }
 
+  if (isAuthLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <Loader2 className="h-8 w-8 animate-spin text-white" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+    <div className="min-h-screen bg-black text-white p-8 pt-24">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">Jenia - Administration</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="sm">
-                <Home className="mr-2 h-4 w-4" />
-                Retour au site
-              </Button>
-            </Link>
-            <Button variant="ghost" size="sm" onClick={() => logout()}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Déconnexion
-            </Button>
+            <span className="text-sm text-gray-400">Connecté en tant que {user?.email}</span>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-3xl font-bold">Gestion des Vidéos</h2>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => setEditingVideo(null)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Ajouter une vidéo
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="bg-zinc-900 border-zinc-800">
+            <TabsTrigger value="videos" className="data-[state=active]:bg-zinc-800">
+              <Video className="mr-2 h-4 w-4" /> Vidéos
+            </TabsTrigger>
+            <TabsTrigger value="missions" className="data-[state=active]:bg-zinc-800">
+              <Briefcase className="mr-2 h-4 w-4" /> Missions
+            </TabsTrigger>
+            <TabsTrigger value="workflows" className="data-[state=active]:bg-zinc-800">
+              <FileText className="mr-2 h-4 w-4" /> Workflows
+            </TabsTrigger>
+            <TabsTrigger value="experience" className="data-[state=active]:bg-zinc-800">
+              <Lightbulb className="mr-2 h-4 w-4" /> Expérience (R&D)
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="videos" className="space-y-4">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-white">Gestion des Vidéos</CardTitle>
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="mr-2 h-4 w-4" /> Ajouter une vidéo
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingVideo ? 'Modifier la vidéo' : 'Ajouter une vidéo'}
-                  </DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">Titre *</Label>
-                    <Input
-                      id="title"
-                      name="title"
-                      defaultValue={editingVideo?.title}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      name="description"
-                      defaultValue={editingVideo?.description}
-                      rows={3}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="videoFile">
-                      Fichier vidéo {!editingVideo && '*'}
-                    </Label>
-                    <Input
-                      id="videoFile"
-                      name="videoFile"
-                      type="file"
-                      accept="video/*"
-                      required={!editingVideo}
-                    />
-                    {editingVideo?.videoUrl && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Vidéo actuelle : {editingVideo.videoUrl.split('/').pop()}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Formats supportés: MP4, WebM, MOV. Taille max: 2GB
-                    </p>
-                  </div>
-                  <div>
-                    <Label htmlFor="thumbnailFile">Miniature</Label>
-                    <Input
-                      id="thumbnailFile"
-                      name="thumbnailFile"
-                      type="file"
-                      accept="image/*"
-                    />
-                    {editingVideo?.thumbnailUrl && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Miniature actuelle : {editingVideo.thumbnailUrl.split('/').pop()}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="displayOrder">Ordre d'affichage</Label>
-                    <Input
-                      id="displayOrder"
-                      name="displayOrder"
-                      type="number"
-                      defaultValue={editingVideo?.displayOrder || 0}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Les vidéos avec un ordre plus élevé apparaissent en premier
-                    </p>
-                  </div>
-
-                  {uploading && uploadProgress > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Upload en cours...</span>
-                        <span>{uploadProgress}%</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div
-                          className="bg-primary h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${uploadProgress}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={handleDialogClose} disabled={uploading}>
-                      Annuler
-                    </Button>
-                    <Button type="submit" disabled={uploading}>
-                      {uploading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Upload en cours...
-                        </>
-                      ) : (
-                        'Enregistrer'
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="p-4">
-                  <div className="aspect-video bg-muted animate-pulse rounded mb-4" />
-                  <div className="h-4 bg-muted animate-pulse rounded mb-2" />
-                  <div className="h-3 bg-muted animate-pulse rounded w-2/3" />
-                </Card>
-              ))}
-            </div>
-          ) : videos && videos.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {videos.map((video) => (
-                <Card key={video.id} className="overflow-hidden">
-                  <video
-                    src={video.videoUrl}
-                    className="w-full aspect-video object-cover"
-                    controls
-                    poster={video.thumbnailUrl || undefined}
-                  />
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-1">{video.title}</h3>
-                    {video.description && (
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {video.description}
-                      </p>
-                    )}
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(video)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(video.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card className="p-12 text-center">
-              <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">Aucune vidéo</h3>
-              <p className="text-muted-foreground mb-4">
-                Commencez par ajouter votre première vidéo
-              </p>
-              <Button onClick={() => setIsDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Ajouter une vidéo
-              </Button>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-400 text-sm">
+                  Gérez ici les vidéos de fond et les clips du portfolio.
+                </p>
+                {/* Video List Component would go here */}
+                <div className="mt-4 p-4 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
+                  Composant de liste des vidéos existant à réintégrer
+                </div>
+              </CardContent>
             </Card>
-          )}
-        </div>
-      </main>
+          </TabsContent>
+
+          <TabsContent value="missions" className="space-y-4">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-white">Missions Clients</CardTitle>
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="mr-2 h-4 w-4" /> Nouvelle Mission
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-400 text-sm">
+                  Gérez les projets clients (Declics, L'Oréal, etc).
+                </p>
+                <div className="mt-4 p-4 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
+                  Liste des missions (À implémenter)
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="workflows" className="space-y-4">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-white">Workflows & Démos</CardTitle>
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="mr-2 h-4 w-4" /> Nouveau Workflow
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-400 text-sm">
+                  Ajoutez des workflows techniques liés aux missions.
+                </p>
+                <div className="mt-4 p-4 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
+                  Liste des workflows (À implémenter)
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="experience" className="space-y-4">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-white">Expérience & R&D</CardTitle>
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="mr-2 h-4 w-4" /> Nouvel Article/Média
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-400 text-sm">
+                  Publiez des notebooks, podcasts ou vidéos de veille.
+                </p>
+                <div className="mt-4 p-4 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
+                  Liste des contenus R&D (À implémenter)
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

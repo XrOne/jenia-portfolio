@@ -7,6 +7,9 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Admin from "./pages/Admin";
 import Services from "./pages/Services";
+import Missions from "./pages/Missions";
+import MissionDetail from "./pages/MissionDetail";
+import Experience from "./pages/Experience";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -15,6 +18,9 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/admin"} component={Admin} />
       <Route path={"/services"} component={Services} />
+      <Route path={"/missions"} component={Missions} />
+      <Route path={"/missions/:id"} component={MissionDetail} />
+      <Route path={"/experience"} component={Experience} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
@@ -32,7 +38,7 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider
         defaultTheme="dark"
-        // switchable
+      // switchable
       >
         <TooltipProvider>
           <Toaster />

@@ -24,7 +24,7 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 /**
- * Videos table - stores all demo videos
+ * Videos table - stores all demo videos (backgrounds, clips, etc)
  */
 export const videos = pgTable("videos", {
   id: serial("id").primaryKey(),
@@ -44,27 +44,61 @@ export type Video = typeof videos.$inferSelect;
 export type InsertVideo = typeof videos.$inferInsert;
 
 /**
- * Projects table - stores demo projects with their workflow
+ * Missions table - Client projects (e.g. Declics, L'Oreal)
  */
-export const projects = pgTable("projects", {
+export const missions = pgTable("missions", {
   id: serial("id").primaryKey(),
-  title: varchar("title", { length: 255 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(), // e.g. "Declics Project"
+  clientName: varchar("clientName", { length: 255 }), // e.g. "Declics"
   description: text("description"),
-  clientName: varchar("clientName", { length: 255 }),
-  // Workflow steps
-  storyboardImageUrl: text("storyboardImageUrl"),
-  loraTrainingDetails: text("loraTrainingDetails"),
-  workflowDescription: text("workflowDescription"),
-  finalVideoUrl: text("finalVideoUrl"),
-  // Metadata
+  coverImageUrl: text("coverImageUrl"),
   isPublished: boolean("isPublished").default(false).notNull(),
   displayOrder: integer("displayOrder").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export type Project = typeof projects.$inferSelect;
-export type InsertProject = typeof projects.$inferInsert;
+export type Mission = typeof missions.$inferSelect;
+export type InsertMission = typeof missions.$inferInsert;
+
+/**
+ * Workflows table - Technical workflows linked to missions
+ */
+export const workflows = pgTable("workflows", {
+  id: serial("id").primaryKey(),
+  missionId: integer("missionId").references(() => missions.id),
+  title: varchar("title", { length: 255 }).notNull(), // e.g. "Auto-prompt Pipeline"
+  description: text("description"),
+  toolsUsed: text("toolsUsed"), // JSON or comma-separated list of tools
+  demoUrl: text("demoUrl"), // Link to Vibe/AI Studio demo
+  codeSnippet: text("codeSnippet"), // Optional code block
+  displayOrder: integer("displayOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type Workflow = typeof workflows.$inferSelect;
+export type InsertWorkflow = typeof workflows.$inferInsert;
+
+/**
+ * Experience Posts table - R&D, Knowledge Base, Notebooks
+ */
+export const experiencePosts = pgTable("experience_posts", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  summary: text("summary"),
+  content: text("content"), // Rich text or Markdown
+  type: varchar("type", { length: 50 }).notNull(), // 'notebook', 'video', 'podcast', 'article'
+  mediaUrl: text("mediaUrl"), // URL to NotebookLM, YouTube, etc.
+  tags: text("tags"), // JSON or comma-separated tags
+  isPublished: boolean("isPublished").default(false).notNull(),
+  displayOrder: integer("displayOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type ExperiencePost = typeof experiencePosts.$inferSelect;
+export type InsertExperiencePost = typeof experiencePosts.$inferInsert;
 
 /**
  * Services table - stores service offerings and pricing

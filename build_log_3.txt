@@ -1,0 +1,6 @@
+npm ERR! code EJSONPARSE
+npm ERR! JSON.parse Invalid package.json: JSONParseError: Expected double-quoted property name in JSON at position 3656 (line 105 column 1) while parsing near "...te-css\": \"^1.4.0\",\r\n```json\r\n{\r\n      \"n..."
+npm ERR! JSON.parse Failed to parse JSON data.
+npm ERR! JSON.parse Note: package.json must be actual JSON, not just JavaScript.
+
+npm ERR! A complete log of this run can be found in: C:\Users\User\AppData\Local\npm-cache\_logs\2025-11-21T19_33_45_057Z-debug-0.log

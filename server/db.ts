@@ -7,14 +7,14 @@ export function getSupabase(): SupabaseClient {
   if (!_supabase) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
+
     if (!supabaseUrl || !supabaseKey) {
       throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be defined');
     }
-    
+
     _supabase = createClient(supabaseUrl, supabaseKey);
   }
-  
+
   return _supabase;
 }
 
@@ -46,7 +46,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 
   const supabase = getSupabase();
-  
+
   try {
     const userData: any = {
       openId: user.openId,
@@ -82,7 +82,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
 export async function getUserByOpenId(openId: string): Promise<User | undefined> {
   const supabase = getSupabase();
-  
+
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -123,7 +123,7 @@ export interface Video {
 
 export async function getActiveVideos(): Promise<Video[]> {
   const supabase = getSupabase();
-  
+
   const { data, error } = await supabase
     .from('videos')
     .select('*')
@@ -141,7 +141,7 @@ export async function getActiveVideos(): Promise<Video[]> {
 
 export async function getAllVideos(): Promise<Video[]> {
   const supabase = getSupabase();
-  
+
   const { data, error } = await supabase
     .from('videos')
     .select('*')
@@ -158,7 +158,7 @@ export async function getAllVideos(): Promise<Video[]> {
 
 export async function createVideo(video: Omit<Video, 'id' | 'createdAt' | 'updatedAt'>): Promise<Video> {
   const supabase = getSupabase();
-  
+
   const { data, error } = await supabase
     .from('videos')
     .insert(video)
@@ -175,7 +175,7 @@ export async function createVideo(video: Omit<Video, 'id' | 'createdAt' | 'updat
 
 export async function updateVideo(id: number, updates: Partial<Omit<Video, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Video> {
   const supabase = getSupabase();
-  
+
   const { data, error } = await supabase
     .from('videos')
     .update(updates)
@@ -193,7 +193,7 @@ export async function updateVideo(id: number, updates: Partial<Omit<Video, 'id' 
 
 export async function deleteVideo(id: number): Promise<void> {
   const supabase = getSupabase();
-  
+
   const { error } = await supabase
     .from('videos')
     .delete()
@@ -203,4 +203,82 @@ export async function deleteVideo(id: number): Promise<void> {
     console.error("[Database] Failed to delete video:", error);
     throw error;
   }
+}
+
+// Mission Operations
+export interface Workflow {
+  id: number;
+  missionId: number | null;
+  title: string;
+  description: string | null;
+  toolsUsed: string | null;
+  demoUrl: string | null;
+  codeSnippet: string | null;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Mission {
+  id: number;
+  title: string;
+  clientName: string | null;
+  description: string | null;
+  coverImageUrl: string | null;
+  isPublished: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  workflows?: Workflow[];
+}
+
+export async function getMissions(): Promise<Mission[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('missions')
+    .select('*')
+    .eq('isPublished', true)
+    .order('displayOrder', { ascending: false });
+
+  if (error) throw error;
+  return data as Mission[];
+}
+
+export async function getMissionById(id: number): Promise<Mission | null> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('missions')
+    .select('*, workflows(*)')
+    .eq('id', id)
+    .single();
+
+  if (error) return null;
+  return data as Mission;
+}
+
+// Experience Operations
+export interface ExperiencePost {
+  id: number;
+  title: string;
+  summary: string | null;
+  content: string | null;
+  type: 'notebook' | 'video' | 'podcast' | 'article';
+  mediaUrl: string | null;
+  tags: string | null;
+  isPublished: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getExperiencePosts(): Promise<ExperiencePost[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('experience_posts')
+    .select('*')
+    .eq('isPublished', true)
+    .order('displayOrder', { ascending: false });
+
+  if (error) throw error;
+  return data as ExperiencePost[];
 }
