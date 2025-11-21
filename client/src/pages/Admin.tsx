@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { LoginForm } from "@/components/LoginForm";
+import { AddVideoModal } from "@/components/AddVideoModal";
 import { SupabaseAuth } from "@/components/SupabaseAuth";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Plus, Trash2, Video, Briefcase, FileText, Lightbulb } from "lucide-react";
@@ -15,6 +16,28 @@ export default function Admin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("videos");
+  const [showAddVideoModal, setShowAddVideoModal] = useState(false);
+
+  // Queries
+  const { data: videos, refetch: refetchVideos } = trpc.videos.listAll.useQuery();
+
+  // Mutations
+  const deleteVideo = trpc.videos.delete.useMutation({
+    onSuccess: () => {
+      toast({
+        title: "Succès",
+        description: "Vidéo supprimée",
+      });
+      refetchVideos();
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   if (isAuthLoading) {
     return (
@@ -77,33 +100,6 @@ export default function Admin() {
             <TabsTrigger value="experience" className="data-[state=active]:bg-zinc-800">
               <Lightbulb className="mr-2 h-4 w-4" /> Expérience (R&D)
             </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="videos" className="space-y-4">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-white">Gestion des Vidéos</CardTitle>
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="mr-2 h-4 w-4" /> Ajouter une vidéo
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-400 text-sm">
-                  Gérez ici les vidéos de fond et les clips du portfolio.
-                </p>
-                {/* Video List Component would go here */}
-                <div className="mt-4 p-4 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
-                  Composant de liste des vidéos existant à réintégrer
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="missions" className="space-y-4">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-white">Missions Clients</CardTitle>
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="mr-2 h-4 w-4" /> Nouvelle Mission
                 </Button>
               </CardHeader>
@@ -155,8 +151,8 @@ export default function Admin() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
-      </div>
-    </div>
+        </Tabs >
+      </div >
+    </div >
   );
 }
