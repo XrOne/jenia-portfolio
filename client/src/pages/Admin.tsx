@@ -28,7 +28,12 @@ export default function Admin() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
         <div className="w-full max-w-md">
-          <SupabaseAuth onAuthSuccess={() => window.location.reload()} />
+          <div className="mb-4 text-center text-white">
+            <h1 className="text-2xl font-bold mb-2">Accès Admin</h1>
+            <p className="text-sm text-gray-400">
+              L'API est actuellement en maintenance. Veuillez réessayer plus tard.
+            </p>
+          </div>
         </div>
       </div>
     );
