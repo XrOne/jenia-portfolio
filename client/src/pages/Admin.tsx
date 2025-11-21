@@ -23,24 +23,65 @@ export default function Admin() {
     );
   }
 
-  // Show login form if not authenticated or not admin
+  // Show setup instructions if not authenticated or not admin
   if (!user || user.role !== "admin") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="w-full max-w-md">
-          <div className="mb-6 text-center text-white">
-            <h1 className="text-2xl font-bold mb-2">Accès Admin</h1>
-            <p className="text-sm text-gray-400">
-              Connectez-vous pour accéder au dashboard
+        <div className="w-full max-w-2xl px-6">
+          <div className="text-center text-white mb-8">
+            <h1 className="text-3xl font-bold mb-4">Configuration Admin Requise</h1>
+            <p className="text-gray-400 mb-6">
+              Pour accéder au dashboard admin, suivez ces étapes :
             </p>
           </div>
-          <SupabaseAuth onAuthSuccess={(session) => {
-            console.log('Auth success:', session);
-            // Wait a bit then refresh to let the cookie be set
-            setTimeout(() => {
-              window.location.href = '/admin';
-            }, 1000);
-          }} />
+
+          <div className="space-y-6 text-white">
+            <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
+              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                <span className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">1</span>
+                Créer un Utilisateur dans Supabase
+              </h2>
+              <ol className="list-decimal list-inside space-y-2 text-gray-300 ml-10">
+                <li>Allez sur <a href="https://supabase.com/dashboard/project/dmqffcyiclqxqzfkdijy/auth/users" target="_blank" className="text-blue-400 hover:underline">Supabase Dashboard → Authentication → Users</a></li>
+                <li>Cliquez "Add user" → "Create new user"</li>
+                <li>Entrez votre email et mot de passe</li>
+                <li>Cochez "Auto Confirm User"</li>
+                <li>Cliquez "Create user"</li>
+              </ol>
+            </div>
+
+            <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
+              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                <span className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">2</span>
+                Attribuer le Rôle Admin
+              </h2>
+              <ol className="list-decimal list-inside space-y-2 text-gray-300 ml-10">
+                <li>Allez sur <a href="https://supabase.com/dashboard/project/dmqffcyiclqxqzfkdijy/sql/new" target="_blank" className="text-blue-400 hover:underline">Supabase Dashboard → SQL Editor</a></li>
+                <li>Exécutez ce SQL :</li>
+              </ol>
+              <pre className="mt-3 bg-black p-4 rounded border border-zinc-700 text-sm overflow-x-auto">
+                {`UPDATE users 
+SET role = 'admin' 
+WHERE email = 'votre-email@gmail.com';`}
+              </pre>
+            </div>
+
+            <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800">
+              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                <span className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">3</span>
+                Se Connecter
+              </h2>
+              <p className="text-gray-300 ml-10">
+                Une fois configuré, rechargez cette page et vous aurez accès au dashboard.
+              </p>
+            </div>
+
+            <div className="text-center mt-8">
+              <p className="text-sm text-gray-500">
+                Guide complet : <code className="bg-zinc-800 px-2 py-1 rounded">GUIDE_ADMIN_SETUP.md</code>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     );
