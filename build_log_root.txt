@@ -1,0 +1,44 @@
+
+> generative-video-portfolio@1.0.0 build
+> vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+NODE_ENV=production is not supported in the .env file. Only NODE_ENV=development is supported to create a development build of your project. If you need to set process.env.NODE_ENV, you can set it in the Vite config instead.
+[36mvite v7.2.4 [32mbuilding client environment for production...[36m[39m
+(!) %VITE_ANALYTICS_ENDPOINT% is not defined in env variables found in /index.html. Is the variable mistyped?
+(!) %VITE_ANALYTICS_WEBSITE_ID% is not defined in env variables found in /index.html. Is the variable mistyped?
+<script src="%VITE_ANALYTICS_ENDPOINT%/umami"> in "/index.html" can't be bundled without type="module" attribute
+transforming...
+[32mÔ£ô[39m 87 modules transformed.
+Ô£ù Build failed in 835ms
+error during build:
+[vite:esbuild] Transform failed with 2 errors:
+I:/jenia-portfolio/client/src/pages/Admin.tsx:150:16: ERROR: Unexpected closing "Button" tag does not match opening "div" tag
+I:/jenia-portfolio/client/src/pages/Admin.tsx:151:25: ERROR: Unterminated regular expression
+file: I:/jenia-portfolio/client/src/pages/Admin.tsx:150:16
+
+Unexpected closing "Button" tag does not match opening "div" tag
+148 |                          </Button>
+149 |                  <Plus className="mr-2 h-4 w-4" /> Nouveau Workflow
+150 |                </Button>
+    |                  ^
+151 |              </CardHeader>
+152 |              <CardContent>
+
+Unterminated regular expression
+149 |                  <Plus className="mr-2 h-4 w-4" /> Nouveau Workflow
+150 |                </Button>
+151 |              </CardHeader>
+    |                           ^
+152 |              <CardContent>
+153 |                <p className="text-gray-400 text-sm">
+
+    at failureErrorWithLog (I:\jenia-portfolio\node_modules\esbuild\lib\main.js:1467:15)
+    at I:\jenia-portfolio\node_modules\esbuild\lib\main.js:736:50
+    at responseCallbacks.<computed> (I:\jenia-portfolio\node_modules\esbuild\lib\main.js:603:9)
+    at handleIncomingPacket (I:\jenia-portfolio\node_modules\esbuild\lib\main.js:658:12)
+    at Socket.readFromStdout (I:\jenia-portfolio\node_modules\esbuild\lib\main.js:581:7)
+    at Socket.emit (node:events:519:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
