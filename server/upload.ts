@@ -4,10 +4,13 @@ import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
 
+import os from 'os';
+
 const router = express.Router();
 
 // Configure multer for disk storage to avoid memory crashes
-const uploadDir = path.join(process.cwd(), 'uploads');
+// Use os.tmpdir() for Vercel/Serverless compatibility
+const uploadDir = path.join(os.tmpdir(), 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -31,11 +34,11 @@ const upload = multer({
 function getSupabaseClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use SERVICE_ROLE_KEY to bypass RLS
-  
+
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be defined');
   }
-  
+
   return createClient(supabaseUrl, supabaseKey, {
     auth: {
       autoRefreshToken: false,
@@ -46,7 +49,7 @@ function getSupabaseClient() {
 
 router.post('/upload', upload.single('file'), async (req, res) => {
   let tempFilePath: string | null = null;
-  
+
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file provided' });
@@ -61,10 +64,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     console.log(`[Upload] Starting upload: ${file.originalname}, size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
 
     const supabase = getSupabaseClient();
-    
+
     // Read file as stream to avoid loading entire file in memory
     const fileBuffer = fs.readFileSync(tempFilePath);
-    
+
     // Upload to Supabase Storage using SERVICE_ROLE_KEY (bypasses RLS)
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('videos')
@@ -76,9 +79,9 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
     if (uploadError) {
       console.error('[Upload] Supabase upload error:', uploadError);
-      return res.status(500).json({ 
-        error: 'Upload failed', 
-        details: uploadError.message 
+      return res.status(500).json({
+        error: 'Upload failed',
+        details: uploadError.message
       });
     }
 
@@ -102,7 +105,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     });
   } catch (error) {
     console.error('[Upload] Upload error:', error);
-    
+
     // Clean up temp file on error
     if (tempFilePath && fs.existsSync(tempFilePath)) {
       try {
@@ -111,8 +114,8 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         console.error('[Upload] Failed to clean up temp file:', cleanupError);
       }
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: 'Upload failed',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -125,7 +128,7 @@ router.post('/cleanup', async (req, res) => {
     const files = fs.readdirSync(uploadDir);
     const now = Date.now();
     const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-    
+
     let cleaned = 0;
     for (const file of files) {
       const filePath = path.join(uploadDir, file);
@@ -135,7 +138,7 @@ router.post('/cleanup', async (req, res) => {
         cleaned++;
       }
     }
-    
+
     res.json({ message: `Cleaned up ${cleaned} old files` });
   } catch (error) {
     console.error('[Cleanup] Error:', error);
