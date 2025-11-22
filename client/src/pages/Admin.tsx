@@ -11,16 +11,18 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 
 export default function Admin() {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, loading: isAuthLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("videos");
   const [showAddVideoModal, setShowAddVideoModal] = useState(false);
 
-  // Queries
-  const { data: videos, refetch: refetchVideos } = trpc.videos.listAll.useQuery();
+  const {
+    data: videos,
+    refetch: refetchVideos,
+    isFetching: isFetchingVideos,
+  } = trpc.videos.listAll.useQuery();
 
-  // Mutations
   const deleteVideo = trpc.videos.delete.useMutation({
     onSuccess: () => {
       toast({
@@ -46,7 +48,6 @@ export default function Admin() {
     );
   }
 
-  // Show login form if not authenticated or not admin
   if (!user || user.role !== "admin") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
@@ -65,8 +66,12 @@ export default function Admin() {
               <strong className="text-white">Première fois ?</strong>
             </p>
             <ol className="text-xs text-gray-500 space-y-1 list-decimal list-inside">
-              <li>Créez un utilisateur dans <a href="https://supabase.com/dashboard/project/dmqffcyiclqxqzfkdijy/auth/users" target="_blank" className="text-blue-400 hover:underline">Supabase Auth</a></li>
-              <li>Exécutez: <code className="bg-zinc-800 px-1 rounded text-xs">UPDATE users SET role = 'admin' WHERE email = 'votre-email'</code></li>
+              <li>
+                Créez un utilisateur dans <a href="https://supabase.com/dashboard/project/dmqffcyiclqxqzfkdijy/auth/users" target="_blank" className="text-blue-400 hover:underline">Supabase Auth</a>
+              </li>
+              <li>
+                Exécutez: <code className="bg-zinc-800 px-1 rounded text-xs">UPDATE users SET role = 'admin' WHERE email = 'votre-email'</code>
+              </li>
               <li>Connectez-vous ici avec vos identifiants</li>
             </ol>
           </div>
@@ -81,7 +86,17 @@ export default function Admin() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-400">Connecté en tant que {user?.email}</span>
+            <span className="text-sm text-gray-400">
+              Connecté en tant que {user?.email}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation("/")}
+              className="text-white border-zinc-700"
+            >
+              Retour au site
+            </Button>
           </div>
         </div>
 
@@ -114,6 +129,12 @@ export default function Admin() {
                 </Button>
               </CardHeader>
               <CardContent>
+                {isFetchingVideos && (
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Chargement des vidéos...
+                  </div>
+                )}
                 {videos && videos.length > 0 ? (
                   <div className="space-y-2">
                     {videos.map((video) => (
@@ -146,18 +167,54 @@ export default function Admin() {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                <Plus className="mr-2 h-4 w-4" /> Nouveau Workflow
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-400 text-sm">
-                Ajoutez des workflows techniques liés aux missions.
-              </p>
-              <div className="mt-4 p-4 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
-                Liste des workflows (À implémenter)
-              </div>
-            </CardContent>
-          </Card>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm">
+                    Aucune vidéo pour le moment. Ajoutez-en une pour commencer.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="missions" className="space-y-4">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-white">Gestion des Missions</CardTitle>
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="mr-2 h-4 w-4" /> Nouvelle Mission
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-400 text-sm">
+                  Ajoutez et gérez les missions client.
+                </p>
+                <div className="mt-4 p-4 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
+                  Liste des missions (À implémenter)
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="workflows" className="space-y-4">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-white">Workflows</CardTitle>
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="mr-2 h-4 w-4" /> Nouveau Workflow
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-400 text-sm">
+                  Ajoutez des workflows techniques liés aux missions.
+                </p>
+                <div className="mt-4 p-4 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
+                  Liste des workflows (À implémenter)
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="experience" className="space-y-4">
@@ -180,6 +237,12 @@ export default function Admin() {
           </TabsContent>
         </Tabs>
       </div>
-    </div >
+
+      <AddVideoModal
+        open={showAddVideoModal}
+        onClose={() => setShowAddVideoModal(false)}
+        onSuccess={() => refetchVideos()}
+      />
+    </div>
   );
 }

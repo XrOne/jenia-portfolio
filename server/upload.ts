@@ -7,7 +7,8 @@ import path from 'path';
 const router = express.Router();
 
 // Configure multer for disk storage to avoid memory crashes
-const uploadDir = path.join(process.cwd(), 'uploads');
+// Use /tmp so it works on Vercel's read-only filesystem
+const uploadDir = path.join('/tmp', 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -62,13 +63,12 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
     const supabase = getSupabaseClient();
     
-    // Read file as stream to avoid loading entire file in memory
-    const fileBuffer = fs.readFileSync(tempFilePath);
-    
-    // Upload to Supabase Storage using SERVICE_ROLE_KEY (bypasses RLS)
+    // Stream file to Supabase Storage using SERVICE_ROLE_KEY (bypasses RLS)
+    const fileStream = fs.createReadStream(tempFilePath);
+
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('videos')
-      .upload(fileKey, fileBuffer, {
+      .upload(fileKey, fileStream, {
         contentType: file.mimetype,
         upsert: true,
         cacheControl: '3600',
