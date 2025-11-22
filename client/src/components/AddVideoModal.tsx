@@ -101,8 +101,25 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
 
       const { uploadUrl, key, publicUrl } = await urlResponse.json();
 
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) {
+        throw new Error("Configuration Supabase manquante");
+      }
+
+      const supabaseBase = new URL(supabaseUrl);
+      let uploadTarget: URL;
+      try {
+        uploadTarget = new URL(uploadUrl, supabaseUrl);
+      } catch {
+        throw new Error("URL de téléchargement Supabase invalide");
+      }
+
+      if (uploadTarget.origin !== supabaseBase.origin) {
+        throw new Error("URL de téléchargement non Supabase détectée");
+      }
+
       // Upload directly to Supabase using the signed URL to bypass Vercel file size limits
-      const uploadResponse = await fetch(uploadUrl, {
+      const uploadResponse = await fetch(uploadTarget.toString(), {
         method: "PUT",
         headers: {
           "Content-Type": file.type,
@@ -199,7 +216,7 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
             {uploading && (
               <div className="flex items-center gap-2 text-sm text-blue-400">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Upload via l'API en cours...
+                Upload direct vers Supabase en cours...
               </div>
             )}
             {uploadError && (
