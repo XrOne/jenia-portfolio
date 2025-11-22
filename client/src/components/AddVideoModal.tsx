@@ -84,25 +84,43 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
     setUploadError(null);
 
     try {
-      const payload = new FormData();
-      payload.append("file", file);
-
-      const response = await fetch("/api/upload", {
+      // Ask the backend for a signed Supabase upload URL (service role, no size limit)
+      const urlResponse = await fetch("/api/upload-url", {
         method: "POST",
-        body: payload,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type,
+        }),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Upload failed");
+      if (!urlResponse.ok) {
+        const errorText = await urlResponse.text();
+        throw new Error(errorText || "Impossible de préparer l'upload");
       }
 
-      const data = await response.json();
+      const { uploadUrl, key, publicUrl } = await urlResponse.json();
+
+      // Upload directly to Supabase using the signed URL to bypass Vercel file size limits
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        throw new Error(
+          errorText || "Upload Supabase échoué. Vérifiez la taille ou la connexion."
+        );
+      }
 
       setFormData((prev) => ({
         ...prev,
-        videoUrl: data.url,
-        fileKey: data.key,
+        videoUrl: publicUrl,
+        fileKey: key,
         title: prev.title || file.name.replace(/\.[^/.]+$/, ""),
       }));
 
@@ -122,7 +140,7 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
 
       toast({
         title: "Succès",
-        description: "Vidéo uploadée via le serveur",
+        description: "Vidéo uploadée vers Supabase",
       });
     } catch (error: any) {
       setUploadError(error?.message ?? "Échec de l'upload");

@@ -1,33 +1,7 @@
 import express from 'express';
-import multer from 'multer';
 import { createClient } from '@supabase/supabase-js';
-import fs from 'fs';
-import path from 'path';
 
 const router = express.Router();
-
-// Configure multer for disk storage to avoid memory crashes
-// Use /tmp so it works on Vercel's read-only filesystem
-const uploadDir = path.join('/tmp', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-      const timestamp = Date.now();
-      const randomSuffix = Math.random().toString(36).substring(7);
-      cb(null, `${timestamp}-${randomSuffix}-${file.originalname}`);
-    },
-  }),
-  limits: {
-    fileSize: 2 * 1024 * 1024 * 1024, // 2GB limit
-  },
-});
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -40,106 +14,58 @@ function getSupabaseClient() {
   return createClient(supabaseUrl, supabaseKey, {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
-    }
+      persistSession: false,
+    },
   });
 }
 
-router.post('/upload', upload.single('file'), async (req, res) => {
-  let tempFilePath: string | null = null;
-  
+router.post('/upload-url', async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file provided' });
+    const { fileName, contentType } = req.body ?? {};
+
+    if (!fileName) {
+      return res.status(400).json({ error: 'fileName is required' });
     }
 
-    const file = req.file;
-    tempFilePath = file.path;
     const timestamp = Date.now();
     const randomSuffix = Math.random().toString(36).substring(7);
-    const fileKey = `videos/${timestamp}-${randomSuffix}-${file.originalname}`;
+    const fileKey = `videos/${timestamp}-${randomSuffix}-${fileName}`;
 
-    console.log(`[Upload] Starting upload: ${file.originalname}, size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+    console.log(`[Upload] Creating signed URL for: ${fileName}`);
 
     const supabase = getSupabaseClient();
-    
-    // Stream file to Supabase Storage using SERVICE_ROLE_KEY (bypasses RLS)
-    const fileStream = fs.createReadStream(tempFilePath);
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { data, error } = await supabase.storage
       .from('videos')
-      .upload(fileKey, fileStream, {
-        contentType: file.mimetype,
+      .createSignedUploadUrl(fileKey, 60 * 30, {
         upsert: true,
-        cacheControl: '3600',
+        contentType,
       });
 
-    if (uploadError) {
-      console.error('[Upload] Supabase upload error:', uploadError);
-      return res.status(500).json({ 
-        error: 'Upload failed', 
-        details: uploadError.message 
+    if (error || !data?.signedUrl) {
+      console.error('[Upload] Failed to create signed URL:', error);
+      return res.status(500).json({
+        error: 'Failed to create signed upload URL',
+        details: error?.message,
       });
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    const { data: publicUrlData } = supabase.storage
       .from('videos')
       .getPublicUrl(fileKey);
 
-    console.log(`[Upload] Upload successful: ${fileKey}`);
-
-    // Clean up temp file
-    if (tempFilePath && fs.existsSync(tempFilePath)) {
-      fs.unlinkSync(tempFilePath);
-    }
-
-    res.json({
-      url: publicUrl,
+    return res.json({
       key: fileKey,
-      size: file.size,
-      mimetype: file.mimetype,
+      uploadUrl: data.signedUrl,
+      publicUrl: publicUrlData.publicUrl,
+      expiresIn: 60 * 30,
     });
   } catch (error) {
-    console.error('[Upload] Upload error:', error);
-    
-    // Clean up temp file on error
-    if (tempFilePath && fs.existsSync(tempFilePath)) {
-      try {
-        fs.unlinkSync(tempFilePath);
-      } catch (cleanupError) {
-        console.error('[Upload] Failed to clean up temp file:', cleanupError);
-      }
-    }
-    
-    res.status(500).json({ 
-      error: 'Upload failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
+    console.error('[Upload] Upload URL error:', error);
+    return res.status(500).json({
+      error: 'Failed to prepare upload',
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
-  }
-});
-
-// Cleanup endpoint to remove old temp files (optional, can be called periodically)
-router.post('/cleanup', async (req, res) => {
-  try {
-    const files = fs.readdirSync(uploadDir);
-    const now = Date.now();
-    const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-    
-    let cleaned = 0;
-    for (const file of files) {
-      const filePath = path.join(uploadDir, file);
-      const stats = fs.statSync(filePath);
-      if (now - stats.mtimeMs > maxAge) {
-        fs.unlinkSync(filePath);
-        cleaned++;
-      }
-    }
-    
-    res.json({ message: `Cleaned up ${cleaned} old files` });
-  } catch (error) {
-    console.error('[Cleanup] Error:', error);
-    res.status(500).json({ error: 'Cleanup failed' });
   }
 });
 
