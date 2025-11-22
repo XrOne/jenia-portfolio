@@ -12,6 +12,7 @@ export function getSupabase(): SupabaseClient {
       throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be defined');
     }
 
+    console.log("[Database] Initializing Supabase Admin Client...");
     _supabase = createClient(supabaseUrl, supabaseKey);
   }
 
